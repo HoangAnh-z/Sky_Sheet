@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="description" content="Đàn Sky 15 phím, chơi nhiều lớp nhạc cụ, ghi và soạn nhạc ngay trong trình duyệt.">
+  <title>Phòng Nhạc Sky</title>
+  <link rel="stylesheet" href="assets/css/styles.css">
+  <script src="assets/js/theme.js"></script>
+  <script src="assets/js/audio-config.js" defer></script>
+  <script src="assets/js/instruments.js" defer></script>
+  <script src="assets/js/audio.js" defer></script>
+  <script src="assets/js/samples.js" defer></script>
+  <script src="assets/js/app.js" defer></script>
+</head>
+<body>
+  <div class="studio">
+    <header class="header">
+      <div class="brand"><span class="brand-mark" aria-hidden="true">✦</span><div><h1>Phòng Nhạc Sky</h1><p>Một góc nhỏ, cả dàn nhạc.</p></div></div>
+      <div class="header-actions"><span class="local-badge">● Âm thanh tại máy</span><button class="btn" id="themeBtn" type="button" aria-label="Chuyển giao diện sáng tối">Giao diện</button></div>
+    </header>
+
+    <div class="transport panel" aria-label="Điều khiển phát và ghi">
+      <div class="now-playing"><span class="cap">Bản nhạc hiện tại</span><strong id="songTitle">Bài chưa đặt tên</strong></div>
+      <div class="row transport-buttons"><button class="btn primary" id="playBtn" type="button">Phát</button><button class="btn rec" id="recBtn" type="button">Ghi từ đàn</button><button class="btn" id="guideBtn" type="button" aria-pressed="false" aria-describedby="guideStatus" title="Sáng phím cần bấm của lớp đang chọn, chờ bạn bấm đủ nốt rồi mới sang bước tiếp">Tập theo đèn</button></div>
+      <label class="check"><input type="checkbox" id="loop" checked> Lặp</label>
+      <span class="transport-state" id="transportState" role="status">Sẵn sàng</span>
+    </div>
+
+    <main class="workspace">
+      <aside class="instrument panel" aria-label="Đàn và thiết lập">
+        <div class="section-heading instrument-heading"><h2>Chơi đàn</h2><span class="badge" id="activeTrackLabel">Lớp 1</span><button class="btn small" id="expandPadsBtn" type="button" aria-haspopup="dialog" aria-controls="padDialog" aria-expanded="false">⛶ Phóng to</button></div>
+        <div class="play-surface" id="playSurface">
+        <div class="pad-area"><div class="pads" id="pads"></div></div>
+        <p class="guide-status" id="guideStatus" role="status" aria-live="polite" hidden></p>
+        <button class="btn keyboard-toggle" id="keyboardBtn" type="button" aria-pressed="false" aria-describedby="keyboardStatus">Bật chơi bằng bàn phím</button>
+        <p class="hint keyboard-status" id="keyboardStatus" role="status">Bàn phím đang tắt · vẫn có thể bấm trực tiếp lên đàn.</p>
+        <p class="hint keyboard-hint"><kbd>Q W E R T</kbd> <kbd>A S D F G</kbd> <kbd>Z X C V B</kbd><br>Giữ nhiều phím để chơi hợp âm · viền xanh là Đô.</p>
+        </div>
+        <div class="fields">
+          <div class="field"><label class="cap" for="inst">Âm sắc lớp đang chọn</label><select id="inst"></select></div>
+          <div class="field"><label class="cap" for="labelMode">Tên phím</label><select id="labelMode"><option value="key">Phím bàn phím</option><option value="abc">C D E F G A B</option><option value="do">Đô Rê Mi</option></select></div>
+          <div class="field wide"><label class="cap" for="liveMode">Khi bấm đàn</label><select id="liveMode"><option value="active">Chơi lớp đang chọn</option><option value="layered">Chồng các lớp có bật “Chơi”</option></select></div>
+          <div class="field wide"><label class="cap" for="bpmRange">Tốc độ · BPM</label><div class="bpm-line"><input type="range" id="bpmRange" min="50" max="220" value="100"><input type="number" id="bpmNum" min="50" max="220" value="100" aria-label="BPM"></div></div>
+        </div>
+        <details class="record-options"><summary>Tùy chọn ghi & cách chơi nhiều lớp</summary><div class="stack"><label class="check"><input type="checkbox" id="metro" checked> Nhịp khi ghi</label><label class="check"><input type="checkbox" id="ovd" checked> Phát các lớp khác khi ghi</label><p class="hint">Chồng lớp: một phím phát cùng nốt trên nhiều nhạc cụ. Chơi cùng nền: bấm Phát rồi tự đàn lớp đang chọn. Ghi đè: chọn lớp, bấm Ghi; lớp đó được thay từ phím đầu tiên, các lớp khác làm nền. Bản ghi luôn lưu vào lớp đang chọn.</p></div></details>
+      </aside>
+
+      <section class="desk panel" aria-label="Không gian soạn nhạc">
+        <nav class="tabs" role="tablist" aria-label="Công cụ">
+          <button class="tab" id="tab-compose" role="tab" aria-selected="true" aria-controls="view-compose" tabindex="0" data-tab="compose">Soạn nhạc</button>
+          <button class="tab" id="tab-library" role="tab" aria-selected="false" aria-controls="view-library" tabindex="-1" data-tab="library">Thư viện</button>
+          <button class="tab" id="tab-sheet" role="tab" aria-selected="false" aria-controls="view-sheet" tabindex="-1" data-tab="sheet">Bản nhạc & AI</button>
+          <button class="tab" id="tab-sound" role="tab" aria-selected="false" aria-controls="view-sound" tabindex="-1" data-tab="sound">Âm thanh</button>
+        </nav>
+
+        <div class="tab-view compose-view" id="view-compose" role="tabpanel" aria-labelledby="tab-compose">
+          <section class="arrangement" aria-label="Dàn nhạc"><div class="section-heading"><h2>Dàn nhạc <span class="count" id="trackCount">1 / 8</span></h2><button class="btn small" id="addTrk" type="button">+ Thêm lớp</button></div><div class="trks" id="tracks"></div><p class="hint">● Chọn lớp để soạn · Chơi: chồng âm khi bấm đàn · M: tắt tiếng · S: nghe riêng.</p></section>
+          <section class="sequencer" aria-label="Khung soạn nhạc"><div class="section-heading"><h2>Khung soạn nhạc</h2><div class="row"><button class="btn small" id="moreBtn" type="button">+ 8 ô</button><button class="btn small" id="clearBtn" type="button">Xóa lớp này</button></div></div><div class="roll-wrap" id="rollWrap"><div class="roll" id="roll"></div></div><p class="hint">Bấm ô để bật/tắt nốt; nhiều nốt cùng cột tạo hợp âm. Bấm số đầu cột để đặt điểm phát.</p></section>
+        </div>
+
+        <div class="tab-view" id="view-library" role="tabpanel" aria-labelledby="tab-library" hidden><div class="section-heading"><div><span class="cap">Chọn một giai điệu</span><h2>Thư viện của bạn</h2></div><span class="badge">Lưu trên trình duyệt</span></div><ul class="songs" id="songs"></ul><p class="hint">Bài đã lưu chỉ nằm trong trình duyệt này. Sao chép bản nhạc dạng chữ để mang sang thiết bị khác. “Nơi này có anh” là bản trống để bạn tự nhập nốt.</p></div>
+
+        <div class="tab-view" id="view-sheet" role="tabpanel" aria-labelledby="tab-sheet" hidden><div class="sheet-layout"><section class="stack" aria-label="Bản nhạc dạng chữ"><h2>Bản nhạc dạng chữ</h2><div class="field"><label class="cap" for="titleIn">Tên bài</label><input type="text" id="titleIn" maxlength="80"></div><div class="field sheet-field"><label class="cap" for="sheet">Bản nhạc</label><textarea class="mono" id="sheet" rows="9" spellcheck="false" aria-describedby="sheetHelp"></textarea></div><p class="hint" id="sheetHelp">Mỗi từ là một bước. <code>Q+T+E</code> là hợp âm, <code>-</code> là nghỉ, <code># bpm 110</code> là tốc độ. Mỗi <code># track</code> bắt đầu một lớp.</p><div class="row"><button class="btn primary small" id="applyBtn" type="button">Áp dụng</button><button class="btn small" id="copyBtn" type="button">Sao chép</button><button class="btn small" id="saveBtn" type="button">Lưu bài</button></div></section><section class="stack ai-panel" aria-label="Nhờ AI soạn nốt"><h2>Nhờ AI soạn nốt</h2><p class="hint">Nhập ý tưởng, sao chép lời nhắc gửi cho AI bạn dùng. Dán kết quả vào bản nhạc rồi bấm Áp dụng.</p><div class="field"><label class="cap" for="reqIn">Ý tưởng của bạn</label><input type="text" id="reqIn" placeholder="Giai điệu ru ngủ 16 ô nhịp…"></div><div class="field sheet-field"><label class="cap" for="promptOut">Lời nhắc</label><textarea class="mono" id="promptOut" rows="9" readonly></textarea></div><button class="btn small" id="copyPrompt" type="button">Sao chép lời nhắc</button></section></div></div>
+
+        <div class="tab-view" id="view-sound" role="tabpanel" aria-labelledby="tab-sound" hidden><div class="sound-layout"><section class="stack"><div><span class="cap">Bộ âm của bạn</span><h2>Thay mẫu âm thanh</h2></div><p class="hint">Âm mặc định được tổng hợp bằng Web Audio API ngay trên máy, không phải bản thu từ game Sky. Bạn có thể thay từng âm sắc bằng một file thu một nốt; hệ thống đổi cao độ để chơi các phím còn lại.</p><div class="field"><label class="cap" for="sampleInst">Âm sắc cần thay</label><select id="sampleInst"></select></div><div class="field"><label class="cap" for="sampleRoot">Nốt gốc của file thu</label><select id="sampleRoot"><option value="48">C3 · Đô quãng 3</option><option value="60" selected>C4 · Đô giữa</option><option value="69">A4 · La 440 Hz</option><option value="72">C5 · Đô quãng 5</option></select></div><div class="sample-drop"><label class="cap" for="sampleFile">Chọn mẫu WAV / MP3 / OGG</label><input id="sampleFile" type="file" accept="audio/*,.wav,.mp3,.ogg,.m4a"><p class="hint">Dùng file ngắn, một nốt sạch. Tối đa 10 MB, 10 giây. Đổi cao độ cũng đổi tốc độ và độ dài mẫu.</p></div><p class="sample-status" id="sampleStatus" role="status">Đang dùng âm tổng hợp.</p><div class="row"><button class="btn small" id="previewSample" type="button">Nghe thử C4</button><button class="btn small" id="resetSample" type="button">Khôi phục mặc định</button></div></section><aside class="sound-info stack"><h2>Lưu & chia sẻ bộ âm</h2><p>Mẫu nạp ở đây được lưu trong trình duyệt bằng IndexedDB nếu có hỗ trợ. Đổi trình duyệt hoặc xóa dữ liệu trang sẽ cần nạp lại.</p><p>Muốn mọi người nghe cùng bộ âm khi lên GitHub Pages: đặt file trong <code>assets/audio/</code> rồi khai báo đường dẫn và nốt gốc trong <code>assets/js/audio-config.js</code>.</p><p>Bản nhạc dạng chữ chỉ lưu nốt và nhạc cụ, không kèm file âm thanh. Với các âm quá xa nốt gốc, nhiều mẫu theo từng quãng sẽ cho chất lượng tốt hơn.</p></aside></div></div>
+      </section>
+    </main>
+    <footer class="footer"><span>15 phím · tối đa 8 lớp nhạc cụ</span><span id="liveStatus">Đang chơi lớp đang chọn</span></footer>
+  </div>
+  <dialog class="pad-dialog" id="padDialog" aria-labelledby="padDialogTitle">
+    <div class="expanded-heading"><h2 id="padDialogTitle">Chơi đàn</h2><button class="btn" id="closePadDialog" type="button" autofocus>✕ Thu nhỏ</button></div>
+    <div id="expandedTransport"></div>
+    <div class="expanded-play" id="expandedPlay"></div>
+  </dialog>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+</body>
+</html>

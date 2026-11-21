@@ -1,0 +1,10 @@
+const fs = require('node:fs');
+const path = require('node:path');
+const root = path.resolve(__dirname, '..');
+const output = path.join(root, 'public');
+if (path.dirname(output) !== root || path.basename(output) !== 'public' || (fs.existsSync(output) && fs.lstatSync(output).isSymbolicLink())) throw new Error('Unexpected build output directory');
+fs.rmSync(output, { recursive: true, force: true });
+fs.mkdirSync(output, { recursive: true });
+fs.copyFileSync(path.join(root, 'index.html'), path.join(output, 'index.html'));
+fs.cpSync(path.join(root, 'assets'), path.join(output, 'assets'), { recursive: true });
+console.log('Built public/index.html and public/assets. Server files and secrets are excluded.');

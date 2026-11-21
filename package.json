@@ -2,6 +2,23 @@
   "name": "phong-nhac-sky",
   "version": "2.1.0",
   "private": true,
-  "scripts": { "test": "node tests/smoke.cjs" },
-  "devDependencies": { "fake-indexeddb": "6.2.8", "jsdom": "29.1.1" }
+  "scripts": {
+    "dev": "node --env-file-if-exists=.env.local scripts/dev.cjs",
+    "build": "node scripts/build.cjs",
+    "db:init": "node --env-file-if-exists=.env.local scripts/db-init.cjs",
+    "test": "node tests/smoke.cjs && node tests/backend.cjs && node tests/cloud.cjs && node tests/midi.cjs && node tests/community.cjs && node tests/interface.cjs",
+    "test:e2e": "node tests/browser.cjs && node tests/features-browser.cjs"
+  },
+  "engines": {
+    "node": "24.x"
+  },
+  "dependencies": {
+    "@libsql/client": "0.18.0"
+  },
+  "devDependencies": {
+    "@tonejs/midi": "2.0.28",
+    "fake-indexeddb": "6.2.8",
+    "jsdom": "29.1.1",
+    "playwright": "1.65.1"
+  }
 }

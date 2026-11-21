@@ -13,7 +13,7 @@ async function until(fn) {
   for (let n = 0; n < 100; n++) { if (fn()) return; await new Promise(r => setTimeout(r, 5)); }
   throw new Error('Timed out waiting for state');
 }
-function makeApp(database = idb) {
+function makeApp(database = idb, options = {}) {
   const dom = new JSDOM(html, { url: 'http://localhost:5173/', runScripts: 'outside-only', pretendToBeVisual: true });
   const w = dom.window;
   const errors = [];
@@ -23,6 +23,8 @@ function makeApp(database = idb) {
   w.HTMLDialogElement.prototype.showModal = function () { this.open = true; };
   w.HTMLDialogElement.prototype.close = function () { this.open = false; this.dispatchEvent(new w.Event('close')); };
   w.indexedDB = database;
+  if (options.fetch) w.AbortController = AbortController;
+  if (options.localSongs) w.localStorage.setItem('phongnhacsky.songs', JSON.stringify(options.localSongs));
   w.fetch = async () => { throw new Error('No external requests expected'); };
   w.setInterval = fn => { w.__interval = fn; return 1; };
   w.clearInterval = () => { w.__interval = null; };
@@ -47,6 +49,11 @@ function makeApp(database = idb) {
   for (const script of w.document.querySelectorAll('script[src]')) {
     const file = script.getAttribute('src');
     assert.ok(fs.existsSync(path.join(root, file)), file);
+    if (file.endsWith('/app.js')) {
+      const factory = w.SkyCloud;
+      w.SkyCloud = function () { w.__cloud = factory({ fetch: options.fetch, enabled: !!options.fetch }); return w.__cloud; };
+      w.SkyCloud.errorMessage = factory.errorMessage;
+    }
     w.eval(fs.readFileSync(path.join(root, file), 'utf8'));
     if (file.endsWith('/audio.js')) {
       const Engine = w.SkyAudio;
@@ -64,12 +71,13 @@ function makeApp(database = idb) {
   const change = (id, value) => { $(id).value = value; event(w, $(id), 'change'); };
   return { dom, w, $, key, change, calls, sources, errors };
 }
-(async () => {
+module.exports = { makeApp, event, until };
+if (require.main === module) (async () => {
   const a = makeApp();
   const { $, w, calls, key, change } = a;
   check('Startup: 15 pads, 6 library entries, one selected track, no runtime errors', () => {
     assert.equal(w.document.querySelectorAll('.pad').length, 15);
-    assert.equal(w.document.querySelectorAll('#songs li').length, 6);
+    assert.equal(w.document.querySelectorAll('#songs .song').length, 6);
     assert.equal(w.__song().tracks.length, 1); assert.equal(a.errors.length, 0);
     assert.ok(!Array.from(w.document.querySelectorAll('[id]')).some((el, i, list) => list.findIndex(e => e.id === el.id) !== i));
   });
@@ -193,7 +201,7 @@ function makeApp(database = idb) {
   });
   check('Track additions/deletions preserve selected data and enforce the eight-layer limit', () => {
     for (let n = 0; n < 10; n++) $('addTrk').click(); assert.equal(w.__song().tracks.length, 8);
-    w.document.querySelector('.trk.act button:last-child').click(); assert.equal(w.__song().tracks.length, 7);
+    w.document.querySelector('.trk.act > button').click(); assert.equal(w.__song().tracks.length, 7);
     assert.equal(w.document.querySelectorAll('.trk input[type=radio]:checked').length, 1);
   });
   $('sheet').value = '# Bài tập\n# track Giai điệu | piano | oct 0 | vol 80\nQ+E - Q - W\n# track Đệm | harp | oct 0 | vol 60\nG - - - -';

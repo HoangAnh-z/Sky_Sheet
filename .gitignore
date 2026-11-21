@@ -1,1 +1,9 @@
 node_modules/
+.env*
+!.env.example
+.vercel/
+public/
+.data/
+*.db
+*.db-shm
+*.db-wal

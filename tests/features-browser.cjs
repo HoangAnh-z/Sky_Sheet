@@ -33,7 +33,60 @@ async function register(page, name) {
       const context = await browser.newContext({ viewport, hasTouch: mobile, isMobile: mobile });
       const page = await context.newPage(); const errors = [];
       page.on('pageerror', error => errors.push(error.message));
+      if (!mobile) await page.addInitScript(() => {
+        window.sampleStarts = [];
+        window.oscillatorStarts = 0;
+        const sample = AudioBufferSourceNode.prototype.start;
+        AudioBufferSourceNode.prototype.start = function (...args) {
+          if (this.buffer && !this.loop) window.sampleStarts.push({ rate: this.playbackRate.value, seconds: this.buffer.duration });
+          return sample.apply(this, args);
+        };
+        const oscillator = OscillatorNode.prototype.start;
+        OscillatorNode.prototype.start = function (...args) {
+          window.oscillatorStarts++;
+          return oscillator.apply(this, args);
+        };
+      });
       await page.goto(origin); await page.waitForFunction(() => !document.querySelector('#saveBtn').disabled);
+      await page.locator('#tab-sound').click();
+      await page.locator('#sampleInst').selectOption('piano');
+      await page.waitForFunction(() => document.querySelector('#sampleStatus').textContent.includes('Upright Piano KW'));
+      if (!mobile) {
+        await page.locator('#previewSample').click();
+        assert.equal(await page.evaluate(() => window.sampleStarts.at(-1).rate), 1);
+        await page.locator('#previewSynthSample').click();
+        assert.ok(await page.evaluate(() => window.oscillatorStarts > 0));
+        await page.locator('#inst').selectOption('piano');
+        await page.locator('.pad[data-i="14"]').click();
+        assert.equal(await page.evaluate(() => window.sampleStarts.at(-1).rate), 1);
+        await page.locator('.pad[data-i="2"]').click();
+        assert.ok(Math.abs(await page.evaluate(() => window.sampleStarts.at(-1).rate) - Math.pow(2, -2 / 12)) < 1e-6);
+        const personal = fs.readFileSync(path.join(__dirname, '../assets/audio/freepats/piano-60.mp3'));
+        await page.locator('#sampleFile').setInputFiles({ name: 'personal-piano.mp3', mimeType: 'audio/mpeg', buffer: personal });
+        await page.waitForFunction(() => document.querySelector('#sampleStatus').textContent.includes('personal-piano.mp3'));
+        await page.locator('#resetSample').click();
+        await page.waitForFunction(() => document.querySelector('#sampleStatus').textContent.includes('Upright Piano KW'));
+      }
+      await page.locator('#sampleInst').selectOption('guitar');
+      await page.waitForFunction(() => document.querySelector('#sampleStatus').textContent.includes('Spanish Classical Guitar'));
+      for (const [id, name] of [['harp', 'Concert Harp'], ['flute', 'VSCO 2 CE · Flute'], ['strings', 'Cello & Violin'], ['drums', 'VCSL']]) {
+        await page.locator('#sampleInst').selectOption(id);
+        await page.waitForFunction(text => document.querySelector('#sampleStatus').textContent.includes(text), name);
+      }
+      assert.equal(await page.locator('#sampleFile').isVisible(), false);
+      await page.locator('#tab-compose').click();
+      await page.locator('#inst').selectOption('drums');
+      assert.match(await page.locator('.pad[data-i="0"]').innerText(), /Kick/);
+      assert.match(await page.locator('.rl[data-i="1"]').innerText(), /Snare/);
+      assert.equal(await page.locator('.trk .octave').first().isDisabled(), true);
+      if (!mobile) {
+        await page.locator('.pad[data-i="0"]').click();
+        await page.locator('.pad[data-i="1"]').click();
+        const [kick, snare] = await page.evaluate(() => window.sampleStarts.slice(-2));
+        assert.equal(kick.rate, 1); assert.equal(snare.rate, 1);
+        assert.notEqual(kick.seconds, snare.seconds);
+      }
+      await page.locator('#inst').selectOption(mobile ? 'harp' : 'piano');
       const theme = viewport.width === 390 ? 'light' : 'dark';
       if (await page.locator('html').getAttribute('data-theme') !== theme) await page.locator('#themeBtn').click();
       await page.locator('#liveMode').selectOption('layered');
@@ -95,7 +148,16 @@ async function register(page, name) {
       await page.getByRole('tab', { name: 'Bản nhạc & AI', exact: true }).click();
       await page.locator('#sheet').fill('# bpm 60\n' + '- '.repeat(29) + 'Q - W');
       await page.locator('#applyBtn').click();
-      await page.locator('.hd[data-c="29"]').click();
+      const allLayers = page.getByRole('switch', { name: 'Hiện tất cả lớp' });
+      assert.equal(await allLayers.isChecked(), false);
+      await allLayers.press('Space');
+      assert.equal(await allLayers.isChecked(), true);
+      await allLayers.click();
+      assert.equal(await allLayers.isChecked(), false);
+      const column = await page.locator('.roll-column').first().boundingBox();
+      assert.equal(column.width, 64);
+      await page.locator('#rollStep').fill('30');
+      await page.locator('#rollStep').press('Enter');
       await page.locator('#loop').uncheck();
       const rollRun = await page.evaluate(() => {
         const wrap = document.querySelector('#rollWrap'), play = document.querySelector('#playBtn');
@@ -150,12 +212,49 @@ async function register(page, name) {
       assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
       await page.screenshot({ path: path.join(output, `midi-${viewport.width}.png`), fullPage: true });
       const oldTitle = await page.locator('#songTitle').innerText();
+      const sourceCount = mobile ? 0 : await page.evaluate(() => window.sampleStarts.length);
       await page.locator('#midiPreview').click();
+      if (!mobile) await page.waitForFunction(count => window.sampleStarts.length > count, sourceCount);
       assert.equal(await page.locator('#songTitle').innerText(), oldTitle);
       await page.locator('#midiPreview').click();
       await page.locator('#midiApply').click(); assert.match(await page.locator('#sheet').inputValue(), /T\+S A/);
       assert.equal(await page.locator('#songTitle').innerText(), oldTitle);
       await page.locator('#applyBtn').click();
+      if (!mobile) {
+        const source = page.locator('.cell[data-c="0"][data-r="4"]');
+        const target = page.locator('.cell[data-c="3"][data-r="5"]');
+        const from = await source.boundingBox(), to = await target.boundingBox();
+        assert.ok(await source.evaluate(el => el.classList.contains('on')));
+        await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2);
+        await page.mouse.down();
+        await page.mouse.move(to.x + to.width / 2, to.y + to.height / 2, { steps: 8 });
+        await page.mouse.up();
+        assert.ok(await target.evaluate(el => el.classList.contains('on')));
+        assert.ok(!(await source.evaluate(el => el.classList.contains('on'))));
+        await page.locator('#undoRollBtn').click();
+        assert.ok(await source.evaluate(el => el.classList.contains('on')));
+        assert.ok(!(await target.evaluate(el => el.classList.contains('on'))));
+        await page.locator('#rollFocusBtn').click();
+        assert.equal(await page.locator('.instrument').isVisible(), false);
+        await page.locator('#rollFocusBtn').click();
+      } else {
+        const empty = page.locator('.cell[data-c="3"][data-r="5"]');
+        await empty.tap();
+        assert.ok(!(await empty.evaluate(el => el.classList.contains('on'))));
+        await page.locator('#rollEditBtn').tap();
+        await empty.tap();
+        assert.ok(await empty.evaluate(el => el.classList.contains('on')));
+        await page.locator('#undoRollBtn').tap();
+        await page.locator('#rollEditBtn').tap();
+      }
+      assert.ok(await page.locator('.roll-column').count() < 100);
+      await page.locator('#rollStep').fill('1367');
+      await page.locator('#rollStep').press('Enter');
+      await page.locator('.cell.on[data-c="1366"]').waitFor();
+      await page.locator('.hd.start[data-c="1366"]').waitFor();
+      await page.locator('#rollStep').fill('1');
+      await page.locator('#rollJump button').click();
+      await page.locator('.cell.on[data-c="0"]').first().waitFor();
       await page.locator('#guideBtn').click();
       assert.equal(await page.locator('.pad.guide-next').count(), 2);
       const light = await page.locator('.pad.guide-next').first().evaluate(node => ({ shadow: getComputedStyle(node).boxShadow, halo: getComputedStyle(node, '::after').display }));
@@ -167,7 +266,7 @@ async function register(page, name) {
           Object.defineProperty(document.documentElement, name, { value: undefined });
         }
       });
-      await page.locator('#expandPadsBtn').click();
+      await page.locator('#openPadsFromRoll').click();
       await page.waitForFunction(() => document.querySelector('#padDialog').open);
       await page.waitForTimeout(250);
       const assertLayout = async () => {

@@ -1,11 +1,11 @@
 (function () {
   'use strict';
-  window.SkyAudio = function (getSong, getActiveTrack) {
+  window.SkyAudio = function (getSong, getActiveTrack, sampleLibrary) {
   var INSTS = window.SKY_INSTRUMENTS;
-  var ctx = null, master = null, samples = {}, voices = new Set();
+  var ctx = null, master = null, samples = sampleLibrary || {}, voices = new Set();
   var SEMI = [0, 2, 4, 5, 7, 9, 11, 12, 14, 16, 17, 19, 21, 23, 24];
   function freq(i) { return 261.63 * Math.pow(2, SEMI[i] / 12); }
-  function ensureAudio() {
+  function ensureAudio(resume) {
     if (!ctx) {
       var AC = window.AudioContext || window.webkitAudioContext;
       ctx = new AC();
@@ -13,7 +13,7 @@
       master = ctx.createGain(); master.gain.value = 0.6;
       master.connect(comp); comp.connect(ctx.destination);
     }
-    if (ctx.state === 'suspended') ctx.resume().catch(function () {});
+    if (resume !== false && (ctx.state === 'suspended' || ctx.state === 'interrupted')) ctx.resume().catch(function () {});
     return ctx;
   }
   var nbuf = null, buzzC = null;
@@ -35,13 +35,14 @@
     return tr.bus;
   }
   function refreshBus() { if (ctx) getSong().tracks.forEach(function (tr) { if (tr.bus) tr.bus.gain.value = audible(tr) ? tr.vol / 100 : 0; }); }
-  function voice(i, t, tr, dur) {
+  function voice(i, t, tr, dur, synthesized) {
     tr = tr || getActiveTrack();
     if (!audible(tr)) return;
-    if (samples[tr.inst]) { sampleVoice(i, t, tr, dur); return; }
+    if (!synthesized && samples[tr.inst]) { sampleVoice(i, t, tr, dur); return; }
+    if (tr.inst === 'drums') { fallbackDrum(i, t, tr); return; }
     var ins = INSTS[tr.inst], f = freq(i) * Math.pow(2, tr.oct), g = ctx.createGain(), peak = 0.3, end;
     g.connect(bus(tr));
-    var token = { gain: g, sources: [] }; voices.add(token);
+    var token = { gain: g, sources: [], track: tr, time: t }; voices.add(token);
     g.gain.setValueAtTime(0.0001, t);
     g.gain.exponentialRampToValueAtTime(peak, t + ins.a);
     if (ins.sus) { var d = Math.max(dur || 0.6, ins.a + 0.12); end = t + d + 0.1; g.gain.setValueAtTime(peak, t + d); }
@@ -82,33 +83,77 @@
 
   function stopAll() {
     if (!ctx) return;
-    voices.forEach(function (v) {
-      v.gain.gain.cancelScheduledValues(ctx.currentTime);
-      v.gain.gain.setTargetAtTime(0.0001, ctx.currentTime, 0.015);
-      v.sources.forEach(function (s) { try { s.stop(ctx.currentTime + 0.06); } catch (_) {} });
-    });
-    voices.clear();
+    voices.forEach(stopVoice);
+  }
+  function cancelScheduledFrom(time) {
+    voices.forEach(function (voice) { if (voice.time >= time) stopVoice(voice); });
+  }
+  function stopVoice(voice) {
+    voice.gain.gain.cancelScheduledValues(ctx.currentTime);
+    voice.gain.gain.setTargetAtTime(0.0001, ctx.currentTime, 0.015);
+    voice.sources.forEach(function (source) { try { source.stop(ctx.currentTime + 0.06); } catch (_) {} });
+    voices.delete(voice);
+  }
+  function fallbackDrum(i, t, track) {
+    var low = i === 0 || i === 6 || i === 7;
+    var duration = low ? 0.18 : i === 3 || i === 8 || i === 9 ? 0.26 : 0.08;
+    var source = low ? ctx.createOscillator() : ctx.createBufferSource();
+    var gain = ctx.createGain(), filter;
+    if (low) {
+      source.frequency.setValueAtTime(i === 0 ? 135 : i === 6 ? 190 : 240, t);
+      source.frequency.exponentialRampToValueAtTime(48, t + duration);
+      source.connect(gain);
+    } else {
+      source.buffer = noiseBuf(); source.loop = true;
+      filter = ctx.createBiquadFilter();
+      filter.type = 'bandpass'; filter.frequency.value = i === 1 ? 1400 : 6500;
+      source.connect(filter); filter.connect(gain);
+    }
+    gain.connect(bus(track));
+    gain.gain.setValueAtTime(low ? 0.35 : 0.18, t);
+    gain.gain.exponentialRampToValueAtTime(0.0001, t + duration);
+    var token = { gain: gain, sources: [source], track: track, time: t }; voices.add(token);
+    source.onended = function () {
+      voices.delete(token); source.disconnect(); gain.disconnect();
+      if (filter) filter.disconnect();
+    };
+    source.start(t); source.stop(t + duration);
   }
   function sampleVoice(i, t, tr, dur) {
-    var sample = samples[tr.inst], source = ctx.createBufferSource(), gain = ctx.createGain();
+    var bank = samples[tr.inst], midi = bank.mode === 'kit' ? i : 60 + SEMI[i] + tr.oct * 12;
+    var sample = bank.notes.reduce(function (closest, candidate) {
+      return Math.abs(midi - candidate.rootMidi) < Math.abs(midi - closest.rootMidi) ? candidate : closest;
+    });
+    var source = ctx.createBufferSource(), gain = ctx.createGain();
     source.buffer = sample.buffer;
-    source.playbackRate.value = Math.pow(2, (60 + SEMI[i] + tr.oct * 12 - sample.rootMidi) / 12);
-    var length = Math.min(sample.buffer.duration / source.playbackRate.value, dur || 6);
+    source.playbackRate.value = Math.pow(2, (midi - sample.rootMidi) / 12);
+    var release = bank.mode === 'sustain' ? 0.15 : 0.04;
+    var limit = bank.mode === 'sustain' ? (dur || 0.6) + release : bank.recorded ? 6 : dur || 6;
+    var length = Math.min(sample.buffer.duration / source.playbackRate.value, limit);
+    var attack = Math.min(0.005, length / 4);
     source.connect(gain); gain.connect(bus(tr));
     gain.gain.setValueAtTime(0.0001, t);
-    gain.gain.linearRampToValueAtTime(0.65, t + Math.min(0.005, length / 4));
-    gain.gain.setValueAtTime(0.65, t + Math.max(Math.min(0.005, length / 4), length - 0.04));
+    gain.gain.linearRampToValueAtTime(0.65, t + attack);
+    gain.gain.setValueAtTime(0.65, t + Math.max(attack, length - release));
     gain.gain.linearRampToValueAtTime(0.0001, t + length);
-    var token = { gain: gain, sources: [source] }; voices.add(token);
+    var token = { gain: gain, sources: [source], track: tr, time: t }; voices.add(token);
     source.onended = function () { voices.delete(token); source.disconnect(); gain.disconnect(); };
     source.start(t); source.stop(t + length);
   }
   var previewTrack = { inst: 'harp', oct: 0, vol: 75, mute: false, solo: true, bus: null };
   return {
     ensureAudio: ensureAudio, voice: voice, audible: audible, refreshBus: refreshBus, tick: tick, stopAll: stopAll,
-    setSample: function (id, buffer, rootMidi) { samples[id] = { buffer: buffer, rootMidi: rootMidi }; },
+    cancelScheduledFrom: cancelScheduledFrom,
+    sampleLibrary: samples,
+    setSample: function (id, buffer, rootMidi) { samples[id] = { notes: [{ buffer: buffer, rootMidi: rootMidi }] }; },
+    setSampleBank: function (id, notes, mode) { samples[id] = { notes: notes, mode: mode, recorded: true }; },
     removeSample: function (id) { delete samples[id]; },
-    preview: function (id) { ensureAudio(); previewTrack.inst = id; voice(0, ctx.currentTime, previewTrack); }
+    preview: function (id, synthesized) {
+      ensureAudio();
+      voices.forEach(function (voice) { if (voice.track === previewTrack) stopVoice(voice); });
+      previewTrack.inst = id;
+      voice(0, ctx.currentTime, previewTrack, undefined, synthesized);
+    }
   };
   };
 })();

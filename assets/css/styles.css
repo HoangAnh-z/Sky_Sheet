@@ -562,18 +562,63 @@ input[type="checkbox"], input[type="radio"] { accent-color: var(--gold); margin:
 .roll {
   --cell-h: 17px;
   display: grid;
-  grid-template-columns: 68px repeat(var(--n), 30px);
-  width: max-content;
-  /* Để cả nốt cuối cũng cuộn được tới cột phím. */
-  padding-inline-end: max(0px, calc(100cqw - 94px));
+  position: relative;
+  grid-template-columns: 68px;
+  width: calc(68px + var(--n) * var(--step-w) + max(0px, 100cqw - 64px - var(--step-w)));
   min-height: 100%;
   grid-template-rows: 23px repeat(15, minmax(var(--cell-h), 1fr));
+}
+.roll-column {
+  display: grid;
+  position: absolute;
+  inset-block: 0;
+  left: calc(68px + var(--column) * var(--step-w));
+  width: var(--step-w);
+  grid-template-rows: 23px repeat(15, minmax(var(--cell-h), 1fr));
+}
+.roll-tools { margin-bottom: 8px; }
+.roll-jump { gap: 5px; flex-wrap: nowrap; font-size: 11px; }
+.roll-jump input { width: 7ch; padding: 4px 6px; font: 11px var(--mono); }
+.roll-switch { display: inline-flex; align-items: center; gap: 7px; min-height: 30px; cursor: pointer; font-size: 11px; }
+.roll-switch input {
+  appearance: none;
+  width: 32px;
+  height: 18px;
+  border: 1px solid var(--muted);
+  border-radius: 999px;
+  background: radial-gradient(circle at 8px center, var(--muted) 4px, transparent 5px), var(--well);
+  cursor: inherit;
+}
+.roll-switch input:checked {
+  border-color: var(--gold);
+  background: radial-gradient(circle at calc(100% - 8px) center, var(--on-accent) 4px, transparent 5px), var(--gold);
+}
+@media (forced-colors: active) {
+  .roll-switch input { appearance: auto; width: 18px; }
+}
+.roll-wrap.touch-edit .cell { touch-action: none; }
+#rollEditBtn[aria-pressed="true"], #rollFocusBtn[aria-pressed="true"] {
+  background: var(--gold);
+  color: var(--on-accent);
+  transition: none;
+}
+@media (min-width: 861px) {
+  .workspace.roll-focus { grid-template-columns: minmax(0, 1fr); }
+  .workspace.roll-focus:has(#view-compose:not([hidden])) > .instrument { display: none; }
+  .workspace.roll-focus:has(#view-compose[hidden]) { grid-template-columns: minmax(240px, .27fr) minmax(0, 1fr); }
+}
+@media (max-width: 860px) {
+  #rollFocusBtn { display: none; }
+}
+@media (hover: hover) and (pointer: fine) {
+  #rollEditBtn { display: none; }
 }
 .corner, .rl {
   position: sticky;
   left: 0;
   z-index: 2;
   background: var(--roll-label);
+  border: 0;
   border-right: 1px solid var(--line);
 }
 .corner { top: 0; z-index: 5; }
@@ -582,10 +627,11 @@ input[type="checkbox"], input[type="radio"] { accent-color: var(--gold); margin:
   top: 0;
   z-index: 3;
   background: var(--roll-label);
+  border: 0;
   border-left: 1px solid var(--line);
   display: flex;
   align-items: center;
-  padding-left: 4px;
+  padding: 0 4px;
   color: var(--muted);
   font: 10px var(--mono);
   cursor: pointer;
@@ -638,16 +684,20 @@ input[type="checkbox"], input[type="radio"] { accent-color: var(--gold); margin:
 .cell.b { border-left-color: var(--line); }
 .cell.g, .rl.g { border-top: 1px solid var(--line); }
 .cell:hover { background: var(--panel-2); }
-.cell.guide-cur { background: color-mix(in srgb, var(--sky) 14%, transparent); }
+.practicing .cell { background: color-mix(in srgb, var(--sky) 14%, transparent); }
 .hd.guide-cur { box-shadow: inset 0 -3px var(--sky); }
 
-.cell.on::after {
+.cell.on::after, .cell.layer-note::after {
   content: '';
   position: absolute;
   inset: 3px;
-  background: var(--gold);
+  background: var(--note-fill, var(--gold));
   border-radius: 4px;
 }
+.cell.layer-note:not(.on)::after { opacity: .65; inset-block: 5px; }
+.hd.playing-step { box-shadow: inset 0 -2px var(--sky); }
+.cell.note-target { background: color-mix(in srgb, var(--gold) 35%, transparent); }
+.cell.on { cursor: grab; }
 .sequencer > .hint { margin-top: 8px; font-size: 10px; }
 
 /* Dàn nhạc bên phải */
@@ -700,11 +750,11 @@ input[type="checkbox"], input[type="radio"] { accent-color: var(--gold); margin:
   transition: border-color .15s, box-shadow .15s;
 }
 .trk.act {
-  border-color: var(--gold);
-  box-shadow: 0 0 0 1px var(--gold), 0 4px 14px color-mix(in srgb, var(--gold) 25%, transparent);
+  border-color: var(--track-color, var(--gold));
+  box-shadow: 0 0 0 1px var(--track-color, var(--gold));
 }
 .trk input[type="radio"] { grid-area: radio; margin: 0; cursor: pointer; }
-.trk input[type="text"] { grid-area: name; padding: 5px 7px; font-weight: 600; font-size: 11px; border-radius: 7px; }
+.trk input[type="text"] { grid-area: name; padding: 5px 7px; border-inline-start: 4px solid var(--track-color, var(--gold)); font-weight: 600; font-size: 11px; border-radius: 7px; }
 .trk-tuning, .trk-mix { display: grid; gap: 6px; align-items: center; min-width: 0; }
 .trk-tuning { grid-area: tuning; grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .trk-tuning select { min-width: 0; padding: 4px 6px; font-size: 11px; }

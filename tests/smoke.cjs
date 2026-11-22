@@ -55,6 +55,9 @@ function makeApp(database = idb, options = {}) {
       w.SkyCloud.errorMessage = factory.errorMessage;
     }
     w.eval(fs.readFileSync(path.join(root, file), 'utf8'));
+    // Chromium covers fetching and decoding the shipped recordings. These fixtures exercise
+    // source-independent playback and personal samples with the fake audio context.
+    if (file.endsWith('/audio-config.js')) w.SKY_AUDIO_CONFIG = {};
     if (file.endsWith('/audio.js')) {
       const Engine = w.SkyAudio;
       w.SkyAudio = function (getSong, getActive) {

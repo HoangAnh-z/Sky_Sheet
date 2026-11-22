@@ -23,19 +23,22 @@
       });
     }
     function refresh() {
-      var id = $('sampleInst').value, info = metadata[id];
-      if (info && !Array.from($('sampleRoot').options).some(function (o) { return +o.value === info.rootMidi; })) {
+      var id = $('sampleInst').value, info = metadata[id], kit = id === 'drums';
+      if (!kit && info && !Array.from($('sampleRoot').options).some(function (o) { return +o.value === info.rootMidi; })) {
         var option = document.createElement('option'); option.value = info.rootMidi; option.textContent = 'MIDI ' + info.rootMidi; $('sampleRoot').appendChild(option);
       }
-      $('sampleRoot').value = info ? info.rootMidi : 60;
+      $('sampleRoot').value = info && !kit ? info.rootMidi : 60;
       $('sampleFile').disabled = !!busy[id]; $('resetSample').disabled = !!busy[id];
       $('previewSample').disabled = !!busy[id]; $('sampleRoot').disabled = !!busy[id];
+      $('sampleFile').closest('.sample-drop').hidden = $('sampleRoot').closest('.field').hidden = $('resetSample').hidden = kit;
+      $('previewSample').textContent = kit ? 'Nghe tiếng kick' : 'Nghe mẫu C4';
+      $('previewSynthSample').hidden = !info || kit;
       $('sampleStatus').textContent = busy[id] ? 'Đang nạp mẫu âm…' : info
-        ? info.name + ' · ' + (info.saved ? 'đã lưu trên trình duyệt' : info.shared ? 'bộ âm của trang' : 'chỉ trong phiên này')
-        : 'Đang dùng âm tổng hợp. Chọn nốt gốc trước khi nạp file.';
+        ? info.name + ' · ' + (info.saved ? 'đã lưu trên trình duyệt' : info.shared ? 'bộ âm của trang' + (info.count ? ' (' + info.count + (kit ? ' tiếng)' : ' nốt gốc)') : '') : 'chỉ trong phiên này')
+        : kit ? 'Đang dùng tiếng gõ dự phòng.' : 'Đang dùng âm tổng hợp. Chọn nốt gốc trước khi nạp file.';
     }
     async function decode(data) {
-      var ctx = audio.ensureAudio(), buffer = await ctx.decodeAudioData(data.slice(0));
+      var ctx = audio.ensureAudio(false), buffer = await ctx.decodeAudioData(data.slice(0));
       if (buffer.duration < 0.03 || buffer.duration > 10) throw new Error('Mẫu âm cần dài từ 0,03 đến 10 giây');
       return buffer;
     }
@@ -45,15 +48,21 @@
       var version = versions[id] = (versions[id] || 0) + 1;
       busy[id] = true; refresh();
       try {
-        if (!Number.isFinite(entry.rootMidi) || entry.rootMidi < 0 || entry.rootMidi > 127) throw new Error('Nốt gốc không hợp lệ');
-        var response = await fetch(entry.url);
-        if (!response.ok) throw new Error('Không tải được file (' + response.status + ')');
-        var data = await response.arrayBuffer();
-        if (data.byteLength > 10 * 1024 * 1024) throw new Error('File vượt quá 10 MB');
-        var buffer = await decode(data);
+        var files = entry.samples || [entry];
+        if (!files.length) throw new Error('Bộ âm trống');
+        var notes = await Promise.all(files.map(async function (file) {
+          if (!Number.isInteger(file.rootMidi) || file.rootMidi < 0 || file.rootMidi > 127) throw new Error('Nốt gốc không hợp lệ');
+          var response = await fetch(file.url);
+          if (!response.ok) throw new Error('Không tải được file (' + response.status + ')');
+          var data = await response.arrayBuffer();
+          if (data.byteLength > 10 * 1024 * 1024) throw new Error('File vượt quá 10 MB');
+          return { buffer: await decode(data), rootMidi: file.rootMidi };
+        }));
         if (versions[id] !== version) return;
-        audio.setSample(id, buffer, entry.rootMidi);
-        metadata[id] = { name: entry.url.split('/').pop(), rootMidi: entry.rootMidi, shared: true };
+        if (entry.samples) audio.setSampleBank(id, notes, entry.mode);
+        else audio.setSample(id, notes[0].buffer, notes[0].rootMidi);
+        var root = notes.find(function (sample) { return sample.rootMidi === 60; }) || notes[0];
+        metadata[id] = { name: entry.name || files[0].url.split('/').pop(), rootMidi: root.rootMidi, shared: true, count: notes.length > 1 ? notes.length : 0 };
       } catch (error) {
         if (versions[id] === version) toast('Mẫu ' + instruments[id].n + ': ' + error.message + '. Dùng âm tổng hợp.');
       } finally { if (versions[id] === version) { busy[id] = false; refresh(); } }
@@ -65,7 +74,7 @@
     $('sampleInst').addEventListener('change', refresh);
     $('sampleFile').addEventListener('change', async function () {
       var file = this.files[0], id = $('sampleInst').value, rootMidi = +$('sampleRoot').value;
-      if (!file) return;
+      if (!file || id === 'drums') return;
       var version = versions[id] = (versions[id] || 0) + 1;
       busy[id] = true; refresh();
       try {
@@ -93,6 +102,7 @@
       toast(persisted ? 'Đã khôi phục âm mặc định của trang' : 'Đã khôi phục cho phiên này; không xóa được mẫu đã lưu');
     });
     $('previewSample').addEventListener('click', function () { audio.preview($('sampleInst').value); });
+    $('previewSynthSample').addEventListener('click', function () { audio.preview($('sampleInst').value, true); });
     // Restore local overrides before shared configuration. Mutations win over pending startup loads.
     store('readonly', function (s) { return s.getAll(); }).catch(function () { return []; }).then(async function (records) {
       var restored = new Set();

@@ -1,11 +1,13 @@
 # Tiến độ hiện tại — Phòng Nhạc Sky
 
 - Cập nhật: **2026-11-22**, múi giờ `Asia/Saigon`.
-- Bản ghi mới nhất: [012 — Quy trình cập nhật Vercel](prompts/012-quy-trinh-cap-nhat-vercel.md). Thay đổi giao diện mới nhất ở [011](prompts/011-phoi-mau-giao-dien.md).
+- Bản ghi mới nhất: [021 — Tích hợp bản Piano vào upgrade2](prompts/021-tich-hop-ban-piano-vao-upgrade2.md).
 
 ## Đang ở đâu?
 
 **Bản Production đã chạy tại [musicsheet-azure.vercel.app](https://musicsheet-azure.vercel.app/).** Trang chính và API công khai trả 200. URL riêng của deployment trong yêu cầu 008 chuyển sang đăng nhập Vercel.
+
+Nhánh `upgrade2` tại máy đã nhận piano roll, tua theo bước, công tắc xem nhiều lớp, phát nền và sáu bộ âm thu thử từ Sky_Sheet_Piano. Đề xuất chuyển MP3 sang MIDI tạm dừng. Tính năng mới chưa triển khai lên Production.
 
 | Phần | Trạng thái hiện tại |
 |---|---|
@@ -18,15 +20,18 @@
 | GitHub Pages | Chế độ khách; không chạy API tài khoản |
 | Triển khai online | Production có domain công khai. Dùng domain chính để chia sẻ và giữ cookie đăng nhập của app trên cùng địa chỉ |
 | Nhật ký học prompting | Đã thiết lập từ công việc Vercel + Turso; tiếp tục theo AGENTS.md |
-| Nhập MIDI | Đã thay theo mẫu người dùng: tự tạo toàn bài, tự tìm tông/quy nốt, bảng chỉnh tên/nhạc cụ/quãng tám từng lớp; nghe thử và đưa vào ô soạn; tối đa 4.096 bước/lớp |
+| Nhập MIDI | Tự chuyển toàn bài, chọn tông, tên, nhạc cụ và quãng từng lớp; nghe thử và đưa vào ô soạn; tối đa 4.096 bước/lớp. Nhánh `upgrade2` cho bật lớp Bộ trống trên track trống riêng |
 | PDF/OMR | Để sau theo yêu cầu, chưa triển khai |
 | Bài công khai/copy về thư viện | Đã làm snapshot công khai, tìm/lọc/phân trang, nghe thử, copy riêng có nguồn, không ghi đè bài trùng tên |
 | Bình luận/thích/theo dõi | Đã làm cơ bản trong cùng backend; có xóa bình luận theo quyền, lọc feed theo dõi; chưa có chat/thông báo/realtime |
-| Khung soạn nhạc | Nốt tím cuộn theo nhịp phát về cột phím cố định. Cột sáng khi nốt của lớp đang xem tới mép |
+| Khung soạn nhạc | Nhánh `upgrade2` có piano roll 64 px/bước, kéo nốt, hoàn tác, Đến bước, công tắc nhiều lớp theo màu và cuộn theo nhịp về cột phím cố định |
+| Âm thanh | Nhánh `upgrade2` đóng kèm 65 MP3 CC0 cho piano, guitar, đàn hạc, sáo, dàn dây và bộ trống. Mẫu âm cá nhân vẫn ưu tiên. [Nguồn âm](AUDIO-SOURCES.md) |
 | Chơi chồng lớp / tập | Ô Chơi chỉ hiện khi chọn chồng lớp. Quầng tím cho nốt tập, viền xanh cho Đô, phím sáng vàng khi chơi |
 | Phóng to điện thoại | Bản tại máy giữ 3 hàng × 5 phím cả ngang lẫn dọc, có chế độ phóng to trong trang và cùng bảng màu phím |
 
 ## Kết quả kiểm tra đã có
+
+Kiểm tra nhánh `upgrade2` và phạm vi tích hợp được ghi tại [021](prompts/021-tich-hop-ban-piano-vao-upgrade2.md). Các mốc dưới đây là lịch sử trước khi tích hợp.
 
 Nhiệm vụ **011** chạy `npm test` (115 kiểm tra), Chromium cho bộ tính năng và build. Kiểm tra lưu màu, đổi sáng/tối, khôi phục bộ màu và bố cục bảng màu ở 390 px.
 

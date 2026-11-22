@@ -3,7 +3,8 @@
   var LETTERS = 'QWERTASDFGZXCVB';
   var NAMES = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
   var DO = ['Đô', 'Rê', 'Mi', 'Fa', 'Sol', 'La', 'Si'];
-  var STEP_W = 30, LABEL_W = 68, NOTE_EDGE = 4;
+  var LABEL_W = 68, NOTE_EDGE = 4, STEP_WIDTH = 64;
+  var TRACK_COLORS = ['var(--gold)', '#32b8cf', '#ee9b48', '#ee76a6', '#57bb78', '#729af1', '#d2bc3c', '#cb89ee'];
 
   var SONGS = [
     { title: 'Twinkle Twinkle Little Star', bpm: 100, text: 'Q Q T T  A A T -  R R E E  W W Q -\nT T R R  E E W -  T T R R  E E W -\nQ Q T T  A A T -  R R E E  W W Q' },
@@ -19,11 +20,15 @@
   var labelMode = 'key', cursor = 0, keyboardEnabled = false;
   var ctx = null;
   var playing = false, timerId = null, raf = 0, nextT = 0, stepI = 0, queue = [], finishAt = 0;
-  var shownStep = null;
+  var shownStep = null, paintedStep = null;
   var rec = false, recArmed = false, recT0 = 0, recTimer = null;
   var practice = null, practiceColumn = -1;
   var communityUI = null, previewPlayer = null, editingSongId = null;
-  var cells = [], padEls = [], rlEls = [], hdEls = [];
+  var columns = new Map(), padEls = [], rlEls = [];
+  var rollHistory = new WeakMap();
+  var resetRollScroll = false;
+  var showAllTracks = false;
+  var touchTools = false, drag = null, skipClick = false;
 
   /* ---------- tiện ích ---------- */
   var toastTimer = null;
@@ -39,8 +44,16 @@
   function oct(i) { return i < 7 ? 4 : i < 14 ? 5 : 6; }
   function noteName(i) { return NAMES[i % 7] + oct(i); }
   function doName(i) { return DO[i % 7] + (i < 7 ? '' : i < 14 ? "'" : "''"); }
-  function mainLabel(i) { return labelMode === 'key' ? LETTERS[i] : labelMode === 'abc' ? noteName(i) : doName(i); }
-  function subLabel(i) { return labelMode === 'key' ? noteName(i) : LETTERS[i]; }
+  function isDrumTrack() { return song.tracks[activeT] && song.tracks[activeT].inst === 'drums'; }
+  function padName(i) { return isDrumTrack() ? window.SkyDrums.labels[i] : noteName(i); }
+  function mainLabel(i) { return isDrumTrack() || labelMode === 'key' ? LETTERS[i] : labelMode === 'abc' ? noteName(i) : doName(i); }
+  function subLabel(i) { return isDrumTrack() || labelMode === 'key' ? padName(i) : LETTERS[i]; }
+  function labelRollKey(el, i) {
+    el.classList.toggle('root', !isDrumTrack() && isRoot(i));
+    el.innerHTML = '<span class="rl-key">' + LETTERS[i] + '</span><span class="rl-note">' +
+      (!isDrumTrack() && labelMode === 'do' ? doName(i) : padName(i)) + '</span>';
+    el.setAttribute('aria-label', padName(i) + ', phím ' + LETTERS[i]);
+  }
   function isRoot(i) { return i % 7 === 0; }
   function stepDur() { return 60 / song.bpm / 2; }
   function normSteps(arr, min) {
@@ -88,58 +101,223 @@
     for (var i = 0; i < 15; i++) {
       padEls[i].children[0].textContent = mainLabel(i);
       padEls[i].children[1].textContent = subLabel(i);
+      padEls[i].classList.toggle('root', !isDrumTrack() && isRoot(i));
+      padEls[i].setAttribute('aria-label', padName(i) + ', phím ' + LETTERS[i]);
     }
-    rlEls.forEach(function (el) {
-      var idx = +el.dataset.i;
-      el.innerHTML = '<span class="rl-key">' + LETTERS[idx] + '</span><span class="rl-note">' + (labelMode === 'do' ? doName(idx) : noteName(idx)) + '</span>';
-    });
-    padEls.forEach(function (el, i) { el.setAttribute('aria-label', noteName(i) + ', phím ' + LETTERS[i]); });
+    rlEls.forEach(function (el) { labelRollKey(el, +el.dataset.i); });
   }
 
   /* ---------- khung soạn nhạc ---------- */
   function buildRoll() {
     stopPractice();
-    var wrap = $('#rollWrap'), keep = wrap.scrollLeft;
-    var roll = $('#roll'), n = song.steps.length;
-    roll.style.setProperty('--n', n);
+    var roll = $('#roll'), wrap = $('#rollWrap'), keep = wrap.scrollLeft;
+    roll.style.setProperty('--n', song.steps.length);
+    roll.style.setProperty('--step-w', STEP_WIDTH + 'px');
     roll.textContent = '';
-    cells = []; rlEls = []; hdEls = [];
-    for (var c = 0; c < n; c++) cells.push([]);
-    var frag = document.createDocumentFragment(), el;
-    el = document.createElement('div'); el.className = 'corner'; frag.appendChild(el);
-    for (c = 0; c < n; c++) {
-      el = document.createElement('div');
-      el.className = 'hd' + (c === cursor ? ' start' : ''); el.dataset.c = c;
-      el.textContent = c % 4 === 0 ? (c / 4 + 1) : '';
-      hdEls.push(el); frag.appendChild(el);
-    }
+    columns.clear();
+    rlEls = [];
+    var corner = document.createElement('div');
+    corner.className = 'corner';
+    roll.appendChild(corner);
     for (var k = 0; k < 15; k++) {
-      var idx = 14 - k, g = k > 0 && k % 5 === 0 ? ' g' : '';
-      el = document.createElement('div');
-      el.className = 'rl' + (isRoot(idx) ? ' root' : '') + g; el.dataset.i = idx;
-      el.innerHTML = '<span class="rl-key">' + LETTERS[idx] + '</span><span class="rl-note">' + (labelMode === 'do' ? doName(idx) : noteName(idx)) + '</span>';
-      rlEls.push(el); frag.appendChild(el);
-      for (c = 0; c < n; c++) {
-        el = document.createElement('div');
-        el.className = 'cell' + (c % 4 === 0 ? ' b' : '') + g + (song.steps[c].indexOf(idx) >= 0 ? ' on' : '');
-        el.dataset.r = idx; el.dataset.c = c;
-        cells[c][idx] = el; frag.appendChild(el);
-      }
+      var idx = 14 - k, label = document.createElement('button');
+      label.type = 'button';
+      label.className = 'rl' + (isRoot(idx) ? ' root' : '') + (k > 0 && k % 5 === 0 ? ' g' : '');
+      label.dataset.i = idx;
+      labelRollKey(label, idx);
+      roll.appendChild(label);
+      rlEls.push(label);
     }
-    roll.appendChild(frag);
     wrap.scrollLeft = keep;
+    $('#rollStep').max = song.steps.length;
+    updateRollWindow();
+    updateUndo();
+  }
+  function updateRollWindow() {
+    var wrap = $('#rollWrap'), roll = $('#roll');
+    var left = Math.floor(wrap.scrollLeft / STEP_WIDTH);
+    var first = Math.max(0, left - 8);
+    var end = Math.min(song.steps.length, left + Math.ceil((wrap.clientWidth || 960) / STEP_WIDTH) + 8);
+    columns.forEach(function (column, index) {
+      if (index < first || index >= end) { column.remove(); columns.delete(index); }
+    });
+    var fragment = document.createDocumentFragment();
+    for (var c = first; c < end; c++) {
+      if (columns.has(c)) continue;
+      var column = document.createElement('div'), header = document.createElement('button');
+      column.className = 'roll-column';
+      column.style.setProperty('--column', c);
+      header.type = 'button';
+      header.className = 'hd';
+      header.setAttribute('aria-label', 'Đặt điểm phát tại bước ' + (c + 1));
+      header.title = 'Bước ' + (c + 1);
+      header.dataset.c = c;
+      header.textContent = c % 4 === 0 ? c / 4 + 1 : '';
+      column.appendChild(header);
+      for (var idx = 14; idx >= 0; idx--) {
+        var cell = document.createElement('div');
+        cell.className = 'cell' + (c % 4 === 0 ? ' b' : '') + (idx === 9 || idx === 4 ? ' g' : '');
+        cell.dataset.c = c;
+        cell.dataset.r = idx;
+        column.appendChild(cell);
+      }
+      columns.set(c, column);
+      paintRollStep(c);
+      fragment.appendChild(column);
+    }
+    if (fragment.childNodes.length) roll.appendChild(fragment);
+  }
+  function paintRollStep(c) {
+    var column = columns.get(c), notes = song.steps[c];
+    if (!column || !notes) return;
+    column.firstElementChild.classList.toggle('start', c === cursor);
+    column.firstElementChild.classList.toggle('playing-step', paintedStep && paintedStep.column === c);
+    column.classList.toggle('practicing', c === practiceColumn);
+    var layers = Array.from({ length: 15 }, function () { return []; });
+    song.tracks.forEach(function (track, index) {
+      if (!showAllTracks && index !== activeT) return;
+      var chord = track.steps[c] || [];
+      chord.forEach(function (note) { layers[note].push(TRACK_COLORS[index]); });
+    });
+    for (var i = 0; i < 15; i++) {
+      var cell = column.children[15 - i], colors = layers[i];
+      cell.classList.toggle('on', notes.includes(i));
+      cell.classList.toggle('layer-note', colors.length > 0);
+      if (!colors.length) cell.style.removeProperty('--note-fill');
+      else if (colors.length === 1) cell.style.setProperty('--note-fill', colors[0]);
+      else cell.style.setProperty('--note-fill', 'linear-gradient(to right,' + colors.map(function (color, j) {
+        return color + ' ' + (j * 100 / colors.length) + '% ' + ((j + 1) * 100 / colors.length) + '%';
+      }).join(',') + ')');
+    }
+    column.firstElementChild.classList.toggle('guide-cur', c === practiceColumn);
+  }
+  function updateUndo() {
+    $('#undoRollBtn').disabled = rec || !(rollHistory.get(song.steps) || []).length;
+  }
+  function rememberEdit(steps) {
+    var history = rollHistory.get(song.steps);
+    if (!history) { history = []; rollHistory.set(song.steps, history); }
+    history.push(steps.map(function (c) { return [c, song.steps[c].slice()]; }));
+    if (history.length > 100) history.shift();
+    updateUndo();
   }
   function toggleCell(idx, c) {
+    if (rec) return;
     stopPractice();
+    rememberEdit([c]);
     var arr = song.steps[c], p = arr.indexOf(idx);
-    if (p >= 0) arr.splice(p, 1); else { arr.push(idx); arr.sort(function (a, b) { return a - b; }); ensureAudio(); voice(idx, ctx.currentTime); flashPad(idx); }
-    cells[c][idx].classList.toggle('on', p < 0);
+    if (p >= 0) arr.splice(p, 1);
+    else { arr.push(idx); arr.sort(function (a, b) { return a - b; }); ensureAudio(); voice(idx, ctx.currentTime); flashPad(idx); }
+    paintRollStep(c);
     syncText();
+  }
+  function moveNote(from, to) {
+    if (rec || !to || from.steps !== song.steps) return;
+    var r = +to.dataset.r, c = +to.dataset.c;
+    var source = song.steps[from.column], target = song.steps[c], p = source.indexOf(from.note);
+    if (p < 0 || target.includes(r)) return;
+    stopPractice();
+    rememberEdit(c === from.column ? [c] : [from.column, c]);
+    source.splice(p, 1); target.push(r);
+    target.sort(function (a, b) { return a - b; });
+    paintRollStep(from.column); paintRollStep(c);
+    syncText();
+  }
+  function undoRoll() {
+    var history = rollHistory.get(song.steps);
+    if (rec || !history || !history.length) return;
+    stopPractice();
+    history.pop().forEach(function (entry) {
+      song.steps[entry[0]] = entry[1];
+      paintRollStep(entry[0]);
+    });
+    updateUndo(); syncText();
   }
   function setCursor(c) {
     stopPractice();
-    if (hdEls[cursor]) hdEls[cursor].classList.remove('start');
-    cursor = c; if (hdEls[c]) hdEls[c].classList.add('start');
+    var previous = cursor;
+    cursor = c;
+    $('#rollStep').value = c + 1;
+    paintRollStep(previous); paintRollStep(c);
+  }
+  function jumpToStep(c) {
+    if (rec) return;
+    setCursor(c);
+    $('#rollWrap').scrollLeft = c * STEP_WIDTH;
+    updateRollWindow();
+    if (playing) {
+      if (c > lastAll()) stopPlay();
+      else {
+        audio.stopAll();
+        cuePlayback(c, 0.04);
+        sched();
+      }
+    }
+  }
+  function bindRoll() {
+    var roll = $('#roll'), wrap = $('#rollWrap');
+    wrap.addEventListener('scroll', updateRollWindow, { passive: true });
+    if (typeof ResizeObserver !== 'undefined') new ResizeObserver(updateRollWindow).observe(wrap);
+    $('#undoRollBtn').addEventListener('click', undoRoll);
+    $('#rollJump').addEventListener('submit', function (event) {
+      event.preventDefault();
+      var step = $('#rollStep');
+      if (step.checkValidity()) jumpToStep(step.valueAsNumber - 1);
+    });
+    $('#rollAllTracks').addEventListener('change', function () {
+      showAllTracks = this.checked;
+      columns.forEach(function (_, c) { paintRollStep(c); });
+      if (shownStep) setPlayhead(shownStep);
+    });
+    $('#rollEditBtn').addEventListener('click', function () {
+      touchTools = !touchTools;
+      this.setAttribute('aria-pressed', String(touchTools));
+      wrap.classList.toggle('touch-edit', touchTools);
+    });
+    $('#rollFocusBtn').addEventListener('click', function () {
+      var wide = $('.workspace').classList.toggle('roll-focus');
+      this.setAttribute('aria-pressed', String(wide));
+      this.textContent = wide ? 'Thu hẹp lưới' : 'Mở rộng lưới';
+    });
+    $('#openPadsFromRoll').addEventListener('click', openExpandedPads);
+    roll.addEventListener('pointerdown', function (event) {
+      skipClick = false;
+      var cell = event.target.closest('.cell');
+      if (event.pointerType === 'touch' && !touchTools && cell) { skipClick = true; return; }
+      if (!cell || !cell.classList.contains('on') || rec || event.button !== 0 || drag) return;
+      drag = { id: event.pointerId, x: event.clientX, y: event.clientY,
+        column: +cell.dataset.c, note: +cell.dataset.r, steps: song.steps, target: null, moved: false };
+    });
+    roll.addEventListener('pointermove', function (event) {
+      if (!drag || drag.id !== event.pointerId) return;
+      if (!drag.moved && Math.hypot(event.clientX - drag.x, event.clientY - drag.y) < 6) return;
+      if (!drag.moved) { roll.setPointerCapture(event.pointerId); drag.moved = true; }
+      if (drag.target) drag.target.classList.remove('note-target');
+      var hit = document.elementFromPoint(event.clientX, event.clientY);
+      drag.target = hit && hit.closest('.cell');
+      if (drag.target && roll.contains(drag.target)) drag.target.classList.add('note-target');
+      else drag.target = null;
+    });
+    function finishDrag(event) {
+      if (!drag || drag.id !== event.pointerId) return;
+      var done = drag;
+      drag = null;
+      if (done.target) done.target.classList.remove('note-target');
+      if (done.moved) {
+        skipClick = true;
+        if (event.type === 'pointerup') moveNote(done, done.target);
+      }
+    }
+    window.addEventListener('pointerup', finishDrag);
+    window.addEventListener('pointercancel', finishDrag);
+    roll.addEventListener('lostpointercapture', finishDrag);
+    roll.addEventListener('click', function (event) {
+      var cell = event.target.closest('.cell'), hd = event.target.closest('.hd'), rl = event.target.closest('.rl');
+      if (skipClick && event.detail) { skipClick = false; return; }
+      if (cell) toggleCell(+cell.dataset.r, +cell.dataset.c);
+      else if (hd) jumpToStep(+hd.dataset.c);
+      else if (rl) pressNote(+rl.dataset.i);
+    });
   }
   function setPlayhead(step) {
     var activeNotes = new Set(), playedNotes = new Set();
@@ -147,7 +325,7 @@
       if (!audible(entry.track)) return;
       entry.notes.forEach(function (idx) {
         playedNotes.add(idx);
-        if (entry.track === song.tracks[activeT]) activeNotes.add(idx);
+        if (showAllTracks || entry.track === song.tracks[activeT]) activeNotes.add(idx);
       });
     });
     playedNotes.forEach(flashPad);
@@ -156,10 +334,13 @@
   function scrollToColumn(c) {
     if ($('#padDialog').open || $('#view-compose').hidden) return;
     var wrap = $('#rollWrap');
-    var x = LABEL_W + c * STEP_W;
+    var x = LABEL_W + c * STEP_WIDTH;
     if (x < wrap.scrollLeft + LABEL_W || x > wrap.scrollLeft + wrap.clientWidth - 70) wrap.scrollLeft = Math.max(0, x - 140);
   }
   function clearPlayhead() {
+    var column = paintedStep && columns.get(paintedStep.column);
+    if (column) column.firstElementChild.classList.remove('playing-step');
+    paintedStep = null;
     rlEls.forEach(function (el) { el.classList.remove('active-hit'); });
   }
 
@@ -167,9 +348,9 @@
   function clearPracticeLights() {
     padEls.forEach(function (pad) { pad.classList.remove('guide-next', 'guide-done'); pad.removeAttribute('aria-description'); });
     if (practiceColumn < 0) return;
-    cells[practiceColumn].forEach(function (el) { el.classList.remove('guide-cur'); });
-    hdEls[practiceColumn].classList.remove('guide-cur');
+    var previous = practiceColumn;
     practiceColumn = -1;
+    paintRollStep(previous);
   }
   function stopPractice(message) {
     practice = null; clearPracticeLights();
@@ -185,9 +366,8 @@
       padEls[i].classList.add(pending ? 'guide-next' : 'guide-done');
       padEls[i].setAttribute('aria-description', pending ? 'Nốt cần bấm tiếp' : 'Đã bấm đúng trong hợp âm này');
     });
-    cells[step].forEach(function (el) { el.classList.add('guide-cur'); });
     practiceColumn = step;
-    hdEls[step].classList.add('guide-cur'); scrollToColumn(step);
+    paintRollStep(step); scrollToColumn(step);
     $('#guideStatus').hidden = false;
     $('#guideStatus').textContent = (wrong ? 'Chưa đúng · ' : '') + song.tracks[activeT].name + ' · bước ' + (practice.index + 1) + '/' + practice.sequence.length + ' (ô ' + (step + 1) + ') · Bấm ' + Array.from(practice.remaining).map(function (i) { return LETTERS[i]; }).join(' + ');
   }
@@ -229,12 +409,22 @@
     $('#transportState').textContent = rec ? (recArmed ? 'Chờ ghi…' : 'Đang ghi') : playing ? 'Đang phát' : practice ? 'Đang tập' : 'Sẵn sàng';
   }
   function sched() {
+    var now = ctx.currentTime;
+    if (document.hidden) advanceTimeline(now);
+    if (finishAt) { if (now > finishAt) stopPlay(true); return; }
     var last = rec ? lastBacking() : lastAll();
     if (last < 0) { stopPlay(); return; }
-    while (nextT < ctx.currentTime + 0.12) {
+    // If the browser throttled the timer, skip missed steps instead of playing a burst of late notes.
+    if (nextT < now - 0.1) {
+      var missed = Math.ceil((now - nextT) / stepDur());
+      stepI += missed; nextT += missed * stepDur();
+      if ($('#loop').checked) stepI %= last + 1;
+    }
+    var horizon = now + (document.hidden ? 4 : 0.12);
+    while (nextT < horizon) {
       if (stepI > last) {
         if ($('#loop').checked) { stepI = 0; continue; }
-        clearInterval(timerId); timerId = null; finishAt = nextT + 0.4; return;
+        finishAt = nextT + 0.4; return;
       }
       var step = { time: nextT, column: stepI, duration: stepDur(), advance: stepI < last, tracks: [] };
       song.tracks.forEach(function (tr, k) {
@@ -250,19 +440,53 @@
       stepI++; nextT += step.duration;
     }
   }
+  function advanceTimeline(now) {
+    while (queue.length && queue[0].time <= now) shownStep = queue.shift();
+  }
   function frame() {
     if (!playing) return;
-    var now = ctx.currentTime, previous = shownStep;
-    while (queue.length && queue[0].time <= now) shownStep = queue.shift();
+    var now = ctx.currentTime;
+    advanceTimeline(now);
     // Cạnh đầu nốt đến sát cột phím đúng lúc audio bắt đầu bước tương ứng.
     var step = shownStep || queue[0];
     if (step && !$('#view-compose').hidden && !$('#padDialog').open) {
       var progress = step.advance ? Math.max(0, Math.min(1, (now - step.time) / step.duration)) : 0;
-      $('#rollWrap').scrollLeft = NOTE_EDGE + (step.column + progress) * STEP_W;
+      $('#rollWrap').scrollLeft = NOTE_EDGE + (step.column + progress) * STEP_WIDTH;
     }
-    if (shownStep && shownStep !== previous) setPlayhead(shownStep);
-    if (finishAt && now > finishAt) { stopPlay(true); return; }
+    if (shownStep && shownStep !== paintedStep) {
+      var previous = paintedStep && columns.get(paintedStep.column);
+      if (previous) previous.firstElementChild.classList.remove('playing-step');
+      paintedStep = shownStep;
+      var current = columns.get(shownStep.column);
+      if (current) current.firstElementChild.classList.add('playing-step');
+      setPlayhead(shownStep);
+    }
     raf = requestAnimationFrame(frame);
+  }
+  function cuePlayback(c, delay) {
+    finishAt = 0; queue = []; shownStep = null; clearPlayhead();
+    stepI = c; nextT = ctx.currentTime + delay;
+  }
+  function refreshPlaybackTimer() {
+    clearInterval(timerId);
+    timerId = setInterval(sched, document.hidden ? 250 : 25);
+    sched();
+  }
+  function handleVisibility() {
+    if (document.hidden && rec) { stopRec(); audio.stopAll(); }
+    if (!playing) return;
+    if (!document.hidden) {
+      ensureAudio();
+      // Keep imminent notes and return the rest to the short foreground scheduling window.
+      var pending = queue.findIndex(function (step) { return step.time > ctx.currentTime + 0.12; });
+      if (pending >= 0) {
+        var step = queue[pending];
+        audio.cancelScheduledFrom(step.time);
+        stepI = step.column; nextT = step.time; finishAt = 0;
+        queue.length = pending;
+      }
+    }
+    refreshPlaybackTimer();
   }
   function startPlay() {
     if (previewPlayer) previewPlayer.stop();
@@ -270,9 +494,8 @@
     if (rec) stopRec();
     ensureAudio();
     if (lastAll() < 0) { toast('Chưa có nốt nào để phát'); return; }
-    playing = true; finishAt = 0; queue = []; shownStep = null;
-    stepI = Math.min(cursor, lastAll()); nextT = ctx.currentTime + 0.06;
-    timerId = setInterval(sched, 25); sched();
+    playing = true; cuePlayback(Math.min(cursor, lastAll()), 0.06);
+    refreshPlaybackTimer();
     raf = requestAnimationFrame(frame); updatePlayBtn();
   }
   function stopPlay(keepTail) {
@@ -300,7 +523,7 @@
     if (recArmed) {
       recArmed = false; recT0 = performance.now();
       song.tracks[activeT].steps = song.steps = normSteps([], song.steps.length); setCursor(0); buildRoll();
-      if ($('#ovd').checked && lastBacking() >= 0) { playing = true; finishAt = 0; queue = []; stepI = 0; nextT = ctx.currentTime + 0.02; timerId = setInterval(sched, 25); sched(); raf = requestAnimationFrame(frame); updatePlayBtn(); }
+      if ($('#ovd').checked && lastBacking() >= 0) { playing = true; cuePlayback(0, 0.02); refreshPlaybackTimer(); raf = requestAnimationFrame(frame); updatePlayBtn(); }
       $('#recBtn').textContent = 'Đang ghi… bấm để dừng'; updatePlayBtn();
       if ($('#metro').checked) { tick(); recTimer = setInterval(tick, 60000 / song.bpm); }
     }
@@ -310,7 +533,7 @@
     if (grew) buildRoll();
     if (song.steps[s].indexOf(i) < 0) {
       song.steps[s].push(i); song.steps[s].sort(function (a, b) { return a - b; });
-      cells[s][i].classList.add('on');
+      paintRollStep(s);
     }
   }
 
@@ -334,13 +557,18 @@
     var box = $('#tracks'); box.textContent = '';
     song.tracks.forEach(function (tr, k) {
       var row = document.createElement('div'); row.className = 'trk' + (k === activeT ? ' act' : '');
+      row.style.setProperty('--track-color', TRACK_COLORS[k]);
       var rd = document.createElement('input'); rd.type = 'radio'; rd.name = 'trk'; rd.checked = k === activeT;
       rd.setAttribute('aria-label', 'Soạn lớp ' + (k + 1)); rd.addEventListener('change', function () { selectTrack(k); });
       var nm = document.createElement('input'); nm.type = 'text'; nm.value = tr.name; nm.maxLength = 24; nm.setAttribute('aria-label', 'Tên lớp ' + (k + 1));
       nm.addEventListener('change', function () { tr.name = this.value.replace(/\|/g, '/').trim() || 'Lớp ' + (k + 1); updateTrackInfo(); syncText(); });
       var is = document.createElement('select'); is.setAttribute('aria-label', 'Nhạc cụ lớp ' + (k + 1));
       Object.keys(INSTS).forEach(function (id) { opt(is, id, INSTS[id].n); }); is.value = tr.inst;
-      is.addEventListener('change', function () { tr.inst = this.value; if (k === activeT) $('#inst').value = tr.inst; syncText(); });
+      is.addEventListener('change', function () {
+        tr.inst = this.value;
+        if (k === activeT) $('#inst').value = tr.inst;
+        lockTrackEditing(); syncText();
+      });
       var os = document.createElement('select'); os.className = 'octave'; os.setAttribute('aria-label', 'Quãng tám lớp ' + (k + 1));
       [[-2, 'Thấp 2 quãng'], [-1, 'Thấp 1 quãng'], [0, 'Quãng gốc'], [1, 'Cao 1 quãng']].forEach(function (o) { opt(os, o[0], o[1]); }); os.value = tr.oct;
       os.addEventListener('change', function () { tr.oct = +this.value; syncText(); });
@@ -451,12 +679,14 @@
     audio.stopAll();
     song.tracks.forEach(function (tr) { if (tr.bus) tr.bus.disconnect(); });
     var m = 0; tracks.forEach(function (t) { m = Math.max(m, t.steps.length); });
-    tracks.forEach(function (t) { t.steps = normSteps(t.steps, Math.ceil(m / 8) * 8); });
+    tracks.forEach(function (t) { t.steps = normSteps(t.steps, Math.max(32, Math.ceil(m / 8) * 8)); });
     song = { title: title, bpm: bpm, tracks: tracks, steps: tracks[0].steps }; activeT = 0;
     $('#songTitle').textContent = title || 'Bài chưa đặt tên';
     $('#titleIn').value = title; $('#inst').value = tracks[0].inst; setBpm(bpm, true); setCursor(0);
     renderTracks(); buildRoll(); syncText(true);
-    $('#rollWrap').scrollLeft = 0;
+    resetRollScroll = $('#view-compose').hidden;
+    if (!resetRollScroll) $('#rollWrap').scrollLeft = 0;
+    updateRollWindow();
   }
 
   /* ---------- thư viện ---------- */
@@ -546,7 +776,7 @@
       '- 15 phím từ thấp đến cao: Q W E R T A S D F G Z X C V B, tương ứng C D E F G A B C D E F G A B C (từ C4 đến C6).\n' +
       '- Hợp âm: nối các phím bằng dấu +, ví dụ Q+T+E.\n' +
       '- Dòng bắt đầu bằng # là ghi chú. Ghi tốc độ ở dòng "# bpm 110".\n' +
-      '- Có thể soạn nhiều lớp nhạc cụ chạy cùng lúc, cùng nhịp. Trước các dòng nốt của mỗi lớp, thêm một dòng "# track Tên lớp | mã nhạc cụ | oct 0 | vol 80". Mã nhạc cụ: harp, piano, guitar, zheng, bell, flute, dizi, xiao, erhu, organ, strings, bass. oct từ -2 đến 1.\n' +
+      '- Có thể soạn nhiều lớp nhạc cụ chạy cùng lúc, cùng nhịp. Trước các dòng nốt của mỗi lớp, thêm một dòng "# track Tên lớp | mã nhạc cụ | oct 0 | vol 80". Mã nhạc cụ: harp, piano, guitar, zheng, bell, flute, dizi, xiao, erhu, organ, strings, bass, drums. oct từ -2 đến 1. Với drums, Q kick, W snare, E hi-hat kín, R hi-hat mở.\n' +
       '- Chỉ trả về bản nhạc trong một khối code, không giải thích.\n\n' +
       'Yêu cầu: ' + req;
   }
@@ -574,6 +804,10 @@
       tab.setAttribute('aria-selected', selected); tab.tabIndex = selected ? 0 : -1;
       $('#view-' + tab.dataset.tab).hidden = !selected;
     });
+    if (name === 'compose') {
+      if (resetRollScroll) { $('#rollWrap').scrollLeft = 0; resetRollScroll = false; }
+      updateRollWindow();
+    }
     if (name === 'community' && communityUI) communityUI.open();
   }
   function updateTrackInfo() {
@@ -592,6 +826,12 @@
   function lockTrackEditing() {
     document.querySelectorAll('#tracks input, #tracks select, #tracks button, #inst, #addTrk, #clearBtn, #bpmNum, #bpmRange, #applyBtn').forEach(function (el) { el.disabled = rec; });
     $('#inst').disabled = rec || $('#liveMode').value === 'layered';
+    $('#rollJump').querySelectorAll('input, button').forEach(function (element) { element.disabled = rec; });
+    $('#tracks').querySelectorAll('.octave').forEach(function (select, i) {
+      select.disabled = rec || song.tracks[i].inst === 'drums';
+    });
+    refreshLabels();
+    updateUndo();
   }
   function initAccount() {
     var dialog = $('#accountDialog'), register = false;
@@ -667,9 +907,10 @@
     });
     cloud.start();
   }
+  var openExpandedPads;
   function initExpandedPads() {
     var dialog = $('#padDialog'), transport = $('.transport'), surface = $('#playSurface'), toastElement = $('#toast');
-    var transportAnchor = null, surfaceAnchor = null, toastAnchor = null;
+    var transportAnchor = null, surfaceAnchor = null, toastAnchor = null, openTrigger = null;
     var ownsFullscreen = false, fullscreenRequest = 0;
     function fullscreenElement() { return document.fullscreenElement || document.webkitFullscreenElement; }
     function exitFullscreen() {
@@ -704,12 +945,13 @@
       document.documentElement.classList.remove('pads-expanded');
       fullscreenRequest++; exitFullscreen();
       $('#expandPadsBtn').setAttribute('aria-expanded', 'false');
-      $('#expandPadsBtn').focus({ preventScroll: true });
+      if (openTrigger) openTrigger.focus({ preventScroll: true });
       if (practiceColumn >= 0) scrollToColumn(practiceColumn);
     }
     function close() { if (dialog.open) dialog.close(); restore(); }
-    $('#expandPadsBtn').addEventListener('click', function () {
+    openExpandedPads = function () {
       if (dialog.open) return;
+      openTrigger = this;
       if (typeof dialog.showModal !== 'function') { toast('Trình duyệt này chưa hỗ trợ vùng đàn phóng to. Hãy dùng trình duyệt mới hơn.'); return; }
       clearTimeout(toastTimer); toastElement.classList.remove('show');
       transportAnchor = document.createComment('transport'); surfaceAnchor = document.createComment('play-surface');
@@ -723,7 +965,8 @@
         $('#closePadDialog').focus({ preventScroll: true });
         requestFullscreen();
       } catch (_) { restore(); toast('Không mở được vùng đàn phóng to. Bạn vẫn có thể chơi ở vùng đàn thường.'); }
-    });
+    };
+    $('#expandPadsBtn').addEventListener('click', openExpandedPads);
     $('#closePadDialog').addEventListener('click', close);
     dialog.addEventListener('cancel', function (event) { event.preventDefault(); close(); });
     dialog.addEventListener('close', function () { if (!dialog.open) restore(); });
@@ -866,12 +1109,6 @@
       if (playing) stopPlay();
       song.tracks[activeT].steps = song.steps = normSteps([], song.steps.length); setCursor(0); buildRoll(); syncText(true); toast('Đã xóa lớp này');
     });
-    $('#roll').addEventListener('click', function (e) {
-      var cell = e.target.closest('.cell'), hd = e.target.closest('.hd'), rl = e.target.closest('.rl');
-      if (cell) toggleCell(+cell.dataset.r, +cell.dataset.c);
-      else if (hd) { setCursor(+hd.dataset.c); }
-      else if (rl) pressNote(+rl.dataset.i);
-    });
     $('#titleIn').addEventListener('change', function () { song.title = this.value.trim(); $('#songTitle').textContent = song.title || 'Bài chưa đặt tên'; syncText(true); });
     $('#applyBtn').addEventListener('click', applyText);
     $('#copyBtn').addEventListener('click', function () { copyText($('#sheet').value, $('#sheet')); });
@@ -886,13 +1123,13 @@
       if (i >= 0) { e.preventDefault(); pressNote(i); }
     });
     window.addEventListener('pagehide', function () { stopPractice(); if (rec) stopRec(); if (playing) stopPlay(); audio.stopAll(); });
-    document.addEventListener('visibilitychange', function () { if (document.hidden) { if (rec) stopRec(); if (playing) stopPlay(); audio.stopAll(); } });
+    document.addEventListener('visibilitychange', handleVisibility);
 
-    initInterface(); renderLibrary(); buildPrompt(); updatePlayBtn();
+    initInterface(); bindRoll(); renderLibrary(); buildPrompt(); updatePlayBtn();
     var first = SONGS[0];
     loadSong(first.title, first.bpm, parse(first.text).tracks);
     refreshLabels();
-    previewPlayer = window.SkyPreview(parse, toast);
+    previewPlayer = window.SkyPreview(parse, toast, audio.sampleLibrary);
     function preview(data, button) {
       if (rec) { toast('Hãy dừng ghi trước khi nghe thử.'); return; }
       if (playing) stopPlay(); stopPractice(); previewPlayer.play(data, button);

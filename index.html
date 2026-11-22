@@ -7,6 +7,7 @@
   <title>Phòng Nhạc Sky</title>
   <link rel="stylesheet" href="assets/css/styles.css">
   <script src="assets/js/theme.js"></script>
+  <script src="assets/js/drums.js" defer></script>
   <script src="assets/js/audio-config.js" defer></script>
   <script src="assets/js/instruments.js" defer></script>
   <script src="assets/js/audio.js" defer></script>
@@ -61,7 +62,22 @@
         </nav>
 
         <div class="tab-view compose-view" id="view-compose" role="tabpanel" aria-labelledby="tab-compose">
-          <section class="sequencer" aria-label="Khung soạn nhạc"><div class="section-heading"><div><h2>Khung soạn nhạc</h2><span class="cap-sub">Bấm ô để đặt nốt · cuộn ngang để xem toàn bài</span></div><div class="row"><button class="btn small" id="moreBtn" type="button">+ 8 ô</button><button class="btn small" id="clearBtn" type="button">Xóa lớp này</button></div></div><div class="roll-wrap" id="rollWrap"><div class="roll" id="roll"></div></div><p class="hint">Bấm ô để bật/tắt nốt; nhiều nốt cùng cột tạo hợp âm. Bấm số đầu cột để đặt điểm phát.</p></section>
+          <section class="sequencer" aria-label="Khung soạn nhạc">
+            <div class="section-heading"><h2>Khung soạn nhạc</h2><div class="row"><button class="btn small" id="openPadsFromRoll" type="button" aria-haspopup="dialog" aria-controls="padDialog">Chơi đàn</button><button class="btn small" id="rollFocusBtn" type="button" aria-pressed="false">Mở rộng lưới</button></div></div>
+            <div class="roll-tools row" aria-label="Công cụ soạn nhạc">
+              <button class="btn small" id="rollEditBtn" type="button" aria-pressed="false">Sửa nốt</button>
+              <button class="btn small" id="undoRollBtn" type="button" disabled>Hoàn tác</button>
+              <button class="btn small" id="moreBtn" type="button">+ 8 bước</button><button class="btn small" id="clearBtn" type="button">Xóa lớp này</button>
+              <form class="row roll-jump" id="rollJump">
+                <label for="rollStep">Đến bước</label>
+                <input id="rollStep" type="number" inputmode="numeric" min="1" step="1" required>
+                <button class="btn small" type="submit">Đến</button>
+              </form>
+              <label class="roll-switch"><input id="rollAllTracks" type="checkbox" role="switch"> Hiện tất cả lớp</label>
+            </div>
+            <div class="roll-wrap" id="rollWrap"><div class="roll" id="roll"></div></div>
+            <p class="hint">Bấm để đặt hoặc xóa nốt. Kéo nốt để đổi phím hoặc thời điểm. Trên màn hình cảm ứng, bật Sửa nốt để chỉnh lưới.</p>
+          </section>
           <section class="arrangement" aria-label="Dàn nhạc"><div class="section-heading"><h2>Dàn nhạc <span class="count" id="trackCount">1 / 8</span></h2><button class="btn small" id="addTrk" type="button">+ Thêm lớp</button></div><div class="trks" id="tracks"></div><p class="hint">● Chọn lớp để soạn · <span id="trackPlayHint" hidden>Chơi: chồng âm khi bấm đàn · </span>M: tắt tiếng · S: nghe riêng.</p></section>
         </div>
 
@@ -100,7 +116,7 @@
           <section class="community-detail stack" id="communityDetail" aria-labelledby="communityDetailTitle" hidden><div class="section-heading"><h2 id="communityDetailTitle">Chi tiết bài</h2><button class="btn small" id="communityCloseDetail" type="button">Đóng chi tiết</button></div><div id="communityDetailBody" class="stack"></div><h3>Bình luận</h3><ul id="communityComments" class="community-comments"></ul><button class="btn small" id="communityCommentsMore" type="button" hidden>Xem thêm bình luận</button><form class="stack" id="communityCommentForm"><div class="field"><label class="cap" for="communityComment">Viết bình luận</label><textarea id="communityComment" maxlength="1000" rows="3" required></textarea></div><button class="btn small" id="communitySendComment" type="submit">Gửi bình luận</button></form><p class="hint" id="communityDetailStatus" role="status"></p></section>
         </div>
 
-        <div class="tab-view" id="view-sound" role="tabpanel" aria-labelledby="tab-sound" hidden><div class="sound-layout"><section class="stack"><div><span class="cap">Bộ âm của bạn</span><h2>Thay mẫu âm thanh</h2></div><p class="hint">Âm mặc định được tổng hợp bằng Web Audio API ngay trên máy, không phải bản thu từ game Sky. Bạn có thể thay từng âm sắc bằng một file thu một nốt; hệ thống đổi cao độ để chơi các phím còn lại.</p><div class="field"><label class="cap" for="sampleInst">Âm sắc cần thay</label><select id="sampleInst"></select></div><div class="field"><label class="cap" for="sampleRoot">Nốt gốc của file thu</label><select id="sampleRoot"><option value="48">C3 · Đô quãng 3</option><option value="60" selected>C4 · Đô giữa</option><option value="69">A4 · La 440 Hz</option><option value="72">C5 · Đô quãng 5</option></select></div><div class="sample-drop"><label class="cap" for="sampleFile">Chọn mẫu WAV / MP3 / OGG</label><input id="sampleFile" type="file" accept="audio/*,.wav,.mp3,.ogg,.m4a"><p class="hint">Dùng file ngắn, một nốt sạch. Tối đa 10 MB, 10 giây. Đổi cao độ cũng đổi tốc độ và độ dài mẫu.</p></div><p class="sample-status" id="sampleStatus" role="status">Đang dùng âm tổng hợp.</p><div class="row"><button class="btn small" id="previewSample" type="button">Nghe thử C4</button><button class="btn small" id="resetSample" type="button">Khôi phục mặc định</button></div></section><aside class="sound-info stack"><h2>Lưu & chia sẻ bộ âm</h2><p>Mẫu nạp ở đây được lưu trong trình duyệt bằng IndexedDB nếu có hỗ trợ. Đổi trình duyệt hoặc xóa dữ liệu trang sẽ cần nạp lại.</p><p>Muốn mọi người nghe cùng bộ âm khi lên GitHub Pages: đặt file trong <code>assets/audio/</code> rồi khai báo đường dẫn và nốt gốc trong <code>assets/js/audio-config.js</code>.</p><p>Bản nhạc dạng chữ chỉ lưu nốt và nhạc cụ, không kèm file âm thanh. Với các âm quá xa nốt gốc, nhiều mẫu theo từng quãng sẽ cho chất lượng tốt hơn.</p></aside></div></div>
+        <div class="tab-view" id="view-sound" role="tabpanel" aria-labelledby="tab-sound" hidden><div class="sound-layout"><section class="stack"><div><span class="cap">Bộ âm của bạn</span><h2>Thay mẫu âm thanh</h2></div><p class="hint">Piano, guitar, đàn hạc, sáo, dàn dây và bộ trống dùng mẫu thu. Bạn có thể thay mẫu cho từng nhạc cụ có cao độ.</p><div class="field"><label class="cap" for="sampleInst">Âm sắc cần thay</label><select id="sampleInst"></select></div><div class="field"><label class="cap" for="sampleRoot">Nốt gốc của file thu</label><select id="sampleRoot"><option value="48">C3 · Đô quãng 3</option><option value="60" selected>C4 · Đô giữa</option><option value="69">A4 · La 440 Hz</option><option value="72">C5 · Đô quãng 5</option></select></div><div class="sample-drop"><label class="cap" for="sampleFile">Chọn mẫu WAV / MP3 / OGG</label><input id="sampleFile" type="file" accept="audio/*,.wav,.mp3,.ogg,.m4a"><p class="hint">Dùng file ngắn, một nốt sạch. Tối đa 10 MB, 10 giây. Đổi cao độ cũng đổi tốc độ và độ dài mẫu.</p></div><p class="sample-status" id="sampleStatus" role="status">Đang dùng âm tổng hợp.</p><div class="row"><button class="btn small" id="previewSample" type="button">Nghe mẫu C4</button><button class="btn small" id="previewSynthSample" type="button" hidden>So với âm tổng hợp</button><button class="btn small" id="resetSample" type="button">Khôi phục mặc định</button></div></section><aside class="sound-info stack"><h2>Lưu & chia sẻ bộ âm</h2><p>Mẫu nạp ở đây được lưu trong trình duyệt bằng IndexedDB nếu có hỗ trợ. Đổi trình duyệt hoặc xóa dữ liệu trang sẽ cần nạp lại.</p><p>Các mẫu thu được đóng kèm trang. Bấm Khôi phục mặc định để bỏ mẫu cá nhân và trở về âm mặc định của nhạc cụ.</p><p>Bản nhạc dạng chữ chỉ lưu nốt và nhạc cụ, không kèm file âm thanh. Với các âm quá xa nốt gốc, nhiều mẫu theo từng quãng sẽ cho chất lượng tốt hơn.</p></aside></div></div>
       </section>
     </main>
     <footer class="footer"><span>15 phím · tối đa 8 lớp nhạc cụ</span><span id="liveStatus">Đang chơi lớp đang chọn</span></footer>

@@ -11,5 +11,6 @@
     erhu:   { n: 'Nhị hồ', sus: 1, scoop: 1, lp: 2600, parts: [[1, 0.5, 'sawtooth'], [1.004, 0.4, 'sawtooth']], a: 0.08, vib: [6, 14] },
     organ:  { n: 'Đàn organ', sus: 1, parts: [[1, 1, 'sine'], [2, 0.6, 'sine'], [3, 0.4, 'sine'], [4, 0.25, 'sine']], a: 0.02 },
     strings: { n: 'Dàn dây', sus: 1, lp: 3200, parts: [[1, 0.5, 'sawtooth'], [1.006, 0.4, 'sawtooth'], [0.994, 0.3, 'sawtooth']], a: 0.15, vib: [5.2, 6] },
-    bass:   { n: 'Bass', parts: [[1, 1, 'sine'], [2, 0.35, 'triangle'], [3, 0.1, 'sine']], a: 0.005, len: 0.9 }
+    bass:   { n: 'Bass', parts: [[1, 1, 'sine'], [2, 0.35, 'triangle'], [3, 0.1, 'sine']], a: 0.005, len: 0.9 },
+    drums:  { n: 'Bộ trống' }
   };

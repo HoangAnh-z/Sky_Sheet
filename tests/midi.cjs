@@ -77,6 +77,18 @@ check('Running status and SysEx payloads leave subsequent event bytes aligned', 
   const midi = parseMidi(raw([0,144,60,100,0,62,90,0,240,3,1,2,247,0,144,64,100]));
   assert.deepEqual(midi.tracks[0].notes.map(note => note.midi), [60,62,64]);
 });
+check('General MIDI percussion maps individual hits without changing melodic transposition', () => {
+  const midi = fixture([{ midi: 60, ticks: 0 }, { midi: 64, ticks: 0 }], value => {
+    const kit = value.addTrack(); kit.channel = 9;
+    [36, 38, 42, 46, 100].forEach(note => kit.addNote({ midi: note, ticks: 0, durationTicks: 240 }));
+  });
+  assert.equal(inspect(midi).tracks[1].inst, 'drums');
+  const result = convert(midi, { tracks: [0, 1] });
+  assert.equal(result.report.shift, convert(midi, { tracks: [0] }).report.shift);
+  assert.equal(result.report.unsupportedDrums, 1);
+  assert.match(result.text, /\| drums \| oct 0 \| vol 75\nQ\+W\+E\+R$/);
+  assert.equal(convert(midi, { tracks: [1] }).report.shift, 0);
+});
 check('UTF-8 metadata is decoded and cannot inject header lines', () => {
   const name = Buffer.from('Giai điệu\n# track | X');
   const midi = parseMidi(raw([0,255,3,name.length,...name,0,144,60,100]));

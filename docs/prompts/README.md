@@ -20,8 +20,19 @@ Nhật ký phục vụ việc bàn giao giữa các phiên và môn học Prompt
 | 010 | 2026-11-22 | Thay ảnh nền bằng màu phím đàn | Đã xong mã tại máy | [010-doi-mau-phim-dan.md](010-doi-mau-phim-dan.md) |
 | 011 | 2026-11-22 | Phối nền gradient, màu phím và thêm hai bộ chọn màu | Đã xong mã tại máy | [011-phoi-mau-giao-dien.md](011-phoi-mau-giao-dien.md) |
 | 012 | 2026-11-22 | Quy trình cập nhật bản Vercel đang chạy | Đã trả lời | [012-quy-trinh-cap-nhat-vercel.md](012-quy-trinh-cap-nhat-vercel.md) |
+| 013 | 2026-11-22 | Đề xuất khung soạn dạng piano roll | Đã trả lời | [013-de-xuat-khung-soan-piano-roll.md](013-de-xuat-khung-soan-piano-roll.md) |
+| 014 | 2026-11-22 | Tách dự án và triển khai piano roll riêng | Đã thử trên bản Piano | [014-tach-du-an-sky-sheet-piano.md](014-tach-du-an-sky-sheet-piano.md) |
+| 015 | 2026-11-22 | Thử mẫu thu FreePats trên bản Piano | Đã thử trên bản Piano | [015-thu-mau-thu-freepats.md](015-thu-mau-thu-freepats.md) |
+| 016 | 2026-11-22 | Thử mẫu thu đàn hạc, sáo, dàn dây và bộ trống | Đã thử trên bản Piano | [016-mau-thu-harp-sao-day-va-bo-trong.md](016-mau-thu-harp-sao-day-va-bo-trong.md) |
+| 017 | 2026-11-22 | Phát nền, tua theo bước và xem nhiều lớp | Đã thử trên bản Piano | [017-phat-nen-va-xem-nhieu-lop.md](017-phat-nen-va-xem-nhieu-lop.md) |
+| 018 | 2026-11-22 | Đổi công tắc lớp và cố định lưới ở 213% | Đã thử trên bản Piano | [018-cong-tac-lop-va-do-rong-luoi.md](018-cong-tac-lop-va-do-rong-luoi.md) |
+| 019 | 2026-11-22 | Tìm API và mã nguồn mở chuyển MP3 sang MIDI | Đã trả lời, tạm dừng | [019-de-xuat-mp3-sang-midi.md](019-de-xuat-mp3-sang-midi.md) |
+| 020 | 2026-11-22 | Basic Pitch với cả bài và nhiều nhạc cụ | Đã trả lời, tạm dừng | [020-basic-pitch-ban-phoi.md](020-basic-pitch-ban-phoi.md) |
+| 021 | 2026-11-22 | Tích hợp bản Piano vào Sky_Sheet trên upgrade2 | Đã xong mã tại máy | [021-tich-hop-ban-piano-vao-upgrade2.md](021-tich-hop-ban-piano-vao-upgrade2.md) |
 
-**Số tiếp theo: 013** — đối chiếu các file/mục lục thực tế trước khi dùng số này.
+Bản ghi 014–020 là lịch sử của workspace thử nghiệm Sky_Sheet_Piano. Các mốc triển khai vào bản chính bắt đầu ở 021.
+
+**Số tiếp theo: 022** — đối chiếu các file/mục lục thực tế trước khi dùng số này.
 
 ## Quy ước
 

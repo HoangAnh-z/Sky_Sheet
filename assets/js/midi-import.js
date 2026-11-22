@@ -1,8 +1,7 @@
 (function (root, factory) {
-  var api = factory();
-  if (typeof module === 'object' && module.exports) module.exports = api;
-  else root.SkyMidi = api;
-})(typeof window !== 'undefined' ? window : globalThis, function () {
+  if (typeof module === 'object' && module.exports) module.exports = factory(require('./drums.js'));
+  else root.SkyMidi = factory(root.SkyDrums);
+})(typeof window !== 'undefined' ? window : globalThis, function (drums) {
   'use strict';
   // Quy nốt, chọn tông và bảng lớp theo kiem-tra-midi.html người dùng cung cấp.
   var LETTERS = 'QWERTASDFGZXCVB';
@@ -11,7 +10,7 @@
   var INSTRUMENTS = [
     ['piano', 'Piano'], ['harp', 'Đàn hạc'], ['strings', 'Dàn dây'], ['bass', 'Bass'],
     ['guitar', 'Guitar'], ['zheng', 'Đàn tranh'], ['dizi', 'Sáo dizi'], ['flute', 'Sáo'],
-    ['xiao', 'Tiêu'], ['erhu', 'Nhị hồ'], ['bell', 'Chuông'], ['organ', 'Đàn organ']
+    ['xiao', 'Tiêu'], ['erhu', 'Nhị hồ'], ['bell', 'Chuông'], ['organ', 'Đàn organ'], ['drums', 'Bộ trống']
   ];
   var MAX_BYTES = 1024 * 1024, MAX_NOTES = 20000, MAX_STEPS = 4096;
   function clean(value, length) { return String(value || '').replace(/[\u0000-\u001f\u007f]/g, ' ').replace(/\|/g, '/').trim().slice(0, length); }
@@ -83,7 +82,8 @@
     return { ppq: ppq, bpm: bpm, originalBpm: originalBpm, tracks: tracks, tempos: tempos };
   }
   function defaults(track, index) {
-    return { index: index, name: track.name, inst: track.isDrum ? 'bell' : track.avgMidi < 54 ? 'bass' : index === 0 ? 'piano' : index === 1 ? 'strings' : 'harp', oct: track.avgMidi < 54 ? -1 : 0 };
+    if (track.isDrum) return { index: index, name: track.name, inst: 'drums', oct: 0 };
+    return { index: index, name: track.name, inst: track.avgMidi < 54 ? 'bass' : index === 0 ? 'piano' : index === 1 ? 'strings' : 'harp', oct: track.avgMidi < 54 ? -1 : 0 };
   }
   function inspect(parsed) {
     if (!parsed || !parsed.ppq || !Array.isArray(parsed.tracks) || !parsed.tracks.length) error('Hãy chọn một file MIDI có nốt nhạc.');
@@ -108,32 +108,36 @@
     var bpm = Number(options.bpm == null ? parsed.bpm : options.bpm);
     var excerpt = options.range === 'excerpt', start = excerpt ? Number(options.startBeat == null ? 0 : options.startBeat) : 0, beats = excerpt ? Number(options.beats == null ? 128 : options.beats) : null;
     if (!Number.isInteger(bpm) || bpm < 50 || bpm > 220 || !Number.isFinite(start) || start < 0 || start > 100000 || (excerpt && (!Number.isInteger(beats) || beats < 1 || beats > 2048))) error('Kiểm tra BPM 50–220 và đoạn nhập từ 1 đến 2.048 phách.');
-    var sourceNotes = choices.flatMap(function (choice) { return parsed.tracks[choice.index].notes; });
+    var sourceNotes = choices.filter(function (choice) { return choice.inst !== 'drums'; }).flatMap(function (choice) { return parsed.tracks[choice.index].notes; });
     var shift = 0, score = -1;
     // Giữ nguyên thứ tự -6…+5 và cách xử lý hòa điểm của bản tham chiếu.
-    for (var candidate = -6; candidate <= 5; candidate++) {
+    for (var candidate = -6; sourceNotes.length && candidate <= 5; candidate++) {
       var hits = 0; sourceNotes.forEach(function (note) { if (C_MAJOR_PC.has(((note.midi + candidate) % 12 + 12) % 12)) hits++; });
       if (hits > score) { score = hits; shift = candidate; }
     }
     var title = clean(options.title, 80) || 'Bài nhập MIDI';
     var lines = ['# title ' + title, '# bpm ' + bpm];
-    var report = { imported: 0, folded: 0, adjusted: 0, quantized: 0, outside: 0, merged: 0, shift: shift, tempoChanges: info.tempoChanges, maxSteps: 0 };
+    var report = { imported: 0, folded: 0, adjusted: 0, quantized: 0, outside: 0, merged: 0, unsupportedDrums: 0, layers: 0, shift: shift, tempoChanges: info.tempoChanges, maxSteps: 0 };
     choices.forEach(function (choice, order) {
       var track = parsed.tracks[choice.index], steps = new Map(), last = -1;
+      var kit = choice.inst === 'drums';
       track.notes.forEach(function (note) {
         var beat = note.tick / parsed.ppq;
         if (excerpt && (beat < start || beat >= start + beats)) { report.outside++; return; }
         var position = (beat - start) * 2, step = Math.max(0, Math.round(position));
         if (excerpt && step >= beats * 2) { report.outside++; return; }
+        var drumKey = kit ? drums.midiKey(note.midi) : undefined;
+        if (kit && drumKey === undefined) { report.unsupportedDrums++; return; }
         if (step >= MAX_STEPS) error('Bài dài hơn 4.096 bước/lớp. Chọn “Chỉ một đoạn” hoặc xuất MIDI ngắn hơn; hệ thống không tự cắt bài.');
-        var mapped = mapPitch(note.midi + shift);
+        var mapped = kit ? { key: drumKey } : mapPitch(note.midi + shift);
         if (mapped.folded) report.folded++; if (mapped.rounded) report.adjusted++; if (Math.abs(position - step) > 0.04) report.quantized++;
         if (!steps.has(step)) steps.set(step, new Set());
         if (steps.get(step).has(mapped.key)) report.merged++;
         steps.get(step).add(mapped.key); last = Math.max(last, step); report.imported++;
       });
       if (last < 0) return;
-      lines.push('# track ' + (clean(choice.name, 24) || 'Lớp ' + (order + 1)) + ' | ' + choice.inst + ' | oct ' + Number(choice.oct) + ' | vol ' + (order === 0 ? 90 : 75));
+      lines.push('# track ' + (clean(choice.name, 24) || 'Lớp ' + (order + 1)) + ' | ' + choice.inst + ' | oct ' + (kit ? 0 : Number(choice.oct)) + ' | vol ' + (order === 0 ? 90 : 75));
+      report.layers++;
       var tokens = [];
       for (var i = 0; i <= last; i++) tokens.push(steps.has(i) ? Array.from(steps.get(i)).sort(function (a, b) { return a - b; }).map(function (key) { return LETTERS[key]; }).join('+') : '-');
       for (i = 0; i < tokens.length; i += 16) {
@@ -163,10 +167,12 @@
         var count = document.createElement('span'); count.textContent = track.notes + ' nốt' + (track.percussion ? ' · trống' : ''); cell(count);
         function select(className, label, choices, value) {
           var node = document.createElement('select'); node.className = className; node.dataset.i = track.index; node.setAttribute('aria-label', label + ' ' + (track.index + 1));
-          choices.forEach(function (entry) { var option = document.createElement('option'); option.value = entry[0]; option.textContent = entry[1]; node.appendChild(option); }); node.value = String(value); cell(node);
+          choices.forEach(function (entry) { var option = document.createElement('option'); option.value = entry[0]; option.textContent = entry[1]; node.appendChild(option); }); node.value = String(value); cell(node); return node;
         }
-        select('inst-trk', 'Nhạc cụ MIDI lớp', INSTRUMENTS, track.inst);
-        select('oct-trk', 'Quãng tám MIDI lớp', [[-2, 'Thấp 2 quãng (-2)'], [-1, 'Thấp 1 quãng (-1)'], [0, 'Quãng gốc (0)'], [1, 'Cao 1 quãng (+1)']], track.oct);
+        var inst = select('inst-trk', 'Nhạc cụ MIDI lớp', INSTRUMENTS, track.inst);
+        var oct = select('oct-trk', 'Quãng tám MIDI lớp', [[-2, 'Thấp 2 quãng (-2)'], [-1, 'Thấp 1 quãng (-1)'], [0, 'Quãng gốc (0)'], [1, 'Cao 1 quãng (+1)']], track.oct);
+        function syncOctave() { oct.disabled = inst.value === 'drums'; if (oct.disabled) oct.value = '0'; }
+        inst.addEventListener('change', syncOctave); syncOctave();
         body.appendChild(row);
       }); table.appendChild(body); $('midiTracks').replaceChildren(table);
     }
@@ -178,9 +184,10 @@
         });
         result = convert(parsed, { tracks: tracks, title: $('midiTitle').value, bpm: +$('midiBpm').value, range: $('midiRange').value, startBeat: +$('midiStart').value, beats: +$('midiBeats').value });
         $('midiOutput').value = result.text; var r = result.report;
-        $('midiShift').textContent = (r.shift > 0 ? '+' : '') + r.shift + ' bán âm (tự chọn theo các lớp đã chọn)';
-        $('midiStatus').textContent = 'Đã tạo ' + tracks.length + ' lớp, ' + r.maxSteps + ' bước; xử lý ' + r.imported + ' nốt. Gấp quãng: ' + r.folded + '; quy nốt gần nhất: ' + r.adjusted + '; làm tròn nhịp: ' + r.quantized + '; gộp nốt trùng: ' + r.merged +
-          (r.outside ? '; ngoài đoạn đã chọn: ' + r.outside : '') + '. ' + (r.tempoChanges ? 'MIDI có đổi tempo; bản chuyển dùng một BPM. ' : '') + 'Trường độ/pedal không giữ nguyên. ' + (result.usable ? 'Nghe thử trước khi áp dụng.' : 'Đoạn đã chọn không có nốt.');
+        $('midiShift').textContent = tracks.some(function (track) { return track.inst !== 'drums'; })
+          ? (r.shift > 0 ? '+' : '') + r.shift + ' bán âm (theo các lớp có cao độ)' : '— (chỉ có bộ trống)';
+        $('midiStatus').textContent = 'Đã tạo ' + r.layers + ' lớp, ' + r.maxSteps + ' bước; xử lý ' + r.imported + ' nốt. Gấp quãng: ' + r.folded + '; quy nốt gần nhất: ' + r.adjusted + '; làm tròn nhịp: ' + r.quantized + '; gộp nốt trùng: ' + r.merged +
+          (r.unsupportedDrums ? '; tiếng gõ chưa hỗ trợ: ' + r.unsupportedDrums : '') + (r.outside ? '; ngoài đoạn đã chọn: ' + r.outside : '') + '. ' + (r.tempoChanges ? 'MIDI có đổi tempo; bản chuyển dùng một BPM. ' : '') + 'Trường độ/pedal không giữ nguyên. ' + (result.usable ? 'Nghe thử trước khi áp dụng.' : 'Đoạn đã chọn không có nốt tương thích.');
         $('midiApply').disabled = $('midiCopy').disabled = $('midiPreview').disabled = !result.usable;
       } catch (failure) { $('midiStatus').textContent = failure.message; }
     }

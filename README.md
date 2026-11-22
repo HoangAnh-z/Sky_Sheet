@@ -26,7 +26,8 @@ Sau đó mở http://localhost:5173. Dừng server bằng Ctrl+C.
 ## Bố cục và cách chơi
 
 - Thanh phát/ghi luôn ở ngoài các tab. Máy tính dùng bố cục hai cột theo chiều cao màn hình; điện thoại xếp dọc, thanh phát/ghi bám trên cùng. Danh sách nhiều lớp và bản nhạc dài cuộn trong vùng riêng.
-- **Soạn nhạc**: dàn nhạc và khung nốt của lớp đang chọn. Nút tròn chọn lớp để chơi/soạn. M tắt tiếng, S nghe riêng; M vẫn có hiệu lực khi bật S.
+- **Soạn nhạc**: khung piano roll có cột phím cố định để nghe nốt, kéo nốt, hoàn tác và cột 64 px. **Đến bước** nhảy đến vị trí cần sửa hoặc tua ngay khi đang phát. Công tắc **Hiện tất cả lớp** ghép nốt theo màu, kể cả khi trùng ô. Sửa nốt và hoàn tác áp dụng cho lớp đang chọn. Trên điện thoại, bật **Sửa nốt** trước khi chạm hoặc kéo nốt.
+- **Dàn nhạc**: nút tròn chọn lớp để chơi và soạn. M tắt tiếng, S nghe riêng. M vẫn có hiệu lực khi bật S. **Mở rộng lưới** ẩn đàn bên trái trên màn hình rộng và **Chơi đàn** mở bàn phím phóng to.
 - **Thư viện**: bài mẫu, bài lưu tại máy khi dùng khách, hoặc thư viện riêng theo tài khoản khi đăng nhập. Có bài Ode to Joy ba lớp để thử.
 - **Bản nhạc & AI**: nhập/xuất dạng chữ, nhập file MIDI ngay tại máy, lưu/chia sẻ bài và tạo lời nhắc cho AI. Không có yêu cầu tới dịch vụ AI trong trang.
 - **Cộng đồng**: tìm bài/người đăng, nghe thử, lưu bản sao về thư viện, thích, theo dõi và bình luận. Cần chạy backend để dùng; MIDI và chế độ khách vẫn dùng được trên trang tĩnh.
@@ -40,7 +41,7 @@ Ba cách chơi nhiều lớp:
 
 1. **Chồng âm sắc**: mục “Khi bấm đàn” → “Chồng các lớp có bật Chơi”. Ô **Chơi** hiện trong Dàn nhạc khi bật chế độ này. Một phím phát cùng nốt trên các lớp đã tích, theo quãng tám, âm lượng và M/S của từng lớp. Chỉnh nhạc cụ ở từng thẻ trong Dàn nhạc. Có thể bấm nhiều phím cùng lúc hoặc dùng nhiều ngón trên màn hình cảm ứng.
 2. **Chơi trên nền**: bấm Phát để chạy bản phối, rồi tự chơi lớp đang chọn. Để tránh trùng giai điệu có sẵn, bật M ở lớp giai điệu cũ rồi thêm một lớp mới để tự đàn. M tắt cả phần phát và tiếng đàn tay của lớp đó.
-3. **Ghi lần lượt**: chọn lớp → Ghi từ đàn → bấm phím đầu tiên để bắt đầu. Bản ghi thay nốt của lớp đó; các lớp khác phát làm nền nếu bật tùy chọn. Bản ghi luôn vào lớp đang chọn, kể cả khi đang nghe chồng âm sắc. Trong khi ghi, thay lớp/nhạc cụ/tốc độ bị khóa để giữ bản ghi nhất quán. Tab ẩn vẫn ghi; rời tab trình duyệt sẽ dừng phát/ghi.
+3. **Ghi lần lượt**: chọn lớp → Ghi từ đàn → bấm phím đầu tiên để bắt đầu. Bản ghi thay nốt của lớp đó và các lớp khác phát làm nền nếu bật tùy chọn. Bản ghi luôn vào lớp đang chọn. Trong khi ghi, thay lớp, nhạc cụ và tốc độ bị khóa. Rời tab trình duyệt kết thúc bản ghi. Khi chỉ phát nhạc, bài tiếp tục nếu trình duyệt và hệ điều hành cho phép phát nền.
 
 ### Tập theo đèn
 
@@ -54,7 +55,7 @@ Chế độ này chờ người chơi, không ép theo BPM và không tự phát
 
 1. Mở tab **Bản nhạc & AI → Nhập file MIDI**, chọn `.mid` hoặc `.midi`. File được đọc trên trình duyệt, không gửi bản gốc lên server.
 2. File tự chuyển ngay theo cách xử lý của `kiem-tra-midi.html` người dùng cung cấp. Bảng cho chọn 1–8 lớp, sửa tên, nhạc cụ và quãng tám từng lớp. Track không có nốt được bỏ khỏi bảng; bộ gõ không được chọn mặc định. Tối đa 1 MB, 20.000 nốt và 128 track nguồn.
-3. Tự tìm tông trong -6…+5 bán âm để có nhiều nốt thuộc Đô trưởng nhất, gấp nốt về C4–C6 rồi chọn nốt tự nhiên gần nhất. Nhạc cụ mặc định: bass/quãng -1 cho lớp thấp, piano cho lớp đầu, strings cho lớp thứ hai, harp cho các lớp tiếp; bộ gõ dùng bell. Bạn có thể thay tên bài, BPM 50–220 và các thiết lập lớp.
+3. Tự tìm tông trong -6…+5 bán âm, gấp nốt giai điệu về C4–C6 rồi chọn nốt tự nhiên gần nhất. Nhạc cụ mặc định cho lớp có cao độ là bass/quãng -1 ở lớp thấp, piano ở lớp đầu, dàn dây ở lớp thứ hai, đàn hạc ở các lớp tiếp. Nếu bật lớp MIDI chỉ có trống ở kênh 10, các tiếng General MIDI được ánh xạ sang **Bộ trống**, phần giai điệu giữ cách tính tông riêng. Bạn có thể thay tên bài, BPM 50–220 và các thiết lập lớp.
 4. Mặc định chuyển **Toàn bộ file**, tối đa 4.096 bước/lớp và 200.000 ký tự. Bài quá dài được báo để chọn **Chỉ một đoạn** (điểm bắt đầu theo phách, độ dài 1–2.048 phách); không tự cắt bài. Thay lựa chọn sẽ tạo lại kết quả; khi đang gõ, bấm **Tạo bản nhạc** hoặc rời ô để cập nhật.
 5. Xem báo cáo gấp quãng, quy nốt gần nhất, làm tròn nhịp, gộp nốt trùng và ngoài đoạn; nghe thử tối đa 30 giây. Sau đó bấm **Đưa vào ô bản nhạc**, kiểm tra rồi bấm **Áp dụng**, **Lưu bài**.
 
@@ -78,7 +79,7 @@ CSDL thêm 5 bảng: `public_posts`, `library_sources`, `post_likes`, `follows`,
 
 ## Nguồn âm và thay âm thủ công
 
-Âm mặc định do **Web Audio API** tổng hợp tại máy: kết hợp dao động sine/triangle/sawtooth, bao âm lượng, bộ lọc, rung và nhiễu hơi. Các tên piano, đàn tranh, sáo… là âm mô phỏng, không phải file thu nhạc cụ thật hoặc âm trích từ Sky. Không tải âm mặc định từ nguồn bên ngoài. Tài khoản và bài cá nhân đi qua API cùng tên miền; frontend không tải SDK Firebase hoặc giữ token database.
+Piano và guitar dùng mẫu FreePats. Đàn hạc, sáo và dàn dây dùng VSCO 2 CE. Bộ trống dùng 15 tiếng VCSL. Các mẫu đều là CC0 và được đóng kèm trang. Các nhạc cụ còn lại dùng âm tổng hợp Web Audio. Mở **Âm thanh** để nghe và so sánh bộ thu với âm tổng hợp. Chọn **Bộ trống** trong **Dàn nhạc** để chơi Q (kick), W (snare), E (hi-hat kín), R (hi-hat mở) và các tiếng còn lại. [Nguồn âm và sơ đồ phím](docs/AUDIO-SOURCES.md)
 
 ### Nạp file trên giao diện
 
@@ -86,7 +87,7 @@ Trong tab Âm thanh, chọn âm sắc cần thay, chọn nốt gốc, rồi nạ
 
 Mẫu thay cho **mọi lớp dùng cùng âm sắc**, bao gồm phát bản nhạc và chơi tay. Bản nhạc dạng chữ không chứa file âm thanh. “Khôi phục mặc định” xóa mẫu cá nhân của nhạc cụ đó và trở lại bộ âm cấu hình của trang, hoặc âm tổng hợp khi chưa cấu hình.
 
-Đổi cao độ dùng `playbackRate`, nên tốc độ và độ dài mẫu cũng thay đổi. Mẫu một nốt phù hợp để thử/thay nhanh; bộ mẫu nhiều nốt sẽ tốt hơn khi cần âm thật trên nhiều quãng. Bản hiện tại dùng một mẫu cho mỗi âm sắc, không kéo dài âm bằng vòng lặp.
+Đổi cao độ dùng `playbackRate`, nên tốc độ và độ dài mẫu cũng thay đổi. Mẫu cá nhân dùng một nốt gốc, còn bộ thu nhiều mẫu sẽ chọn nốt gốc gần nhất. Bộ trống dùng âm thanh cố định theo từng phím.
 
 ### Bộ âm dùng chung khi deploy
 
@@ -99,7 +100,7 @@ window.SKY_AUDIO_CONFIG = {
 };
 ```
 
-`rootMidi`: C3=48, C4=60, A4=69, C5=72. Mã âm sắc có trong `assets/js/instruments.js`: harp, piano, guitar, zheng, bell, flute, dizi, xiao, erhu, organ, strings, bass. Đường dẫn tương đối tính từ `index.html`; không thêm `/` ở đầu để hoạt động dưới đường dẫn repository của GitHub Pages. Tên file phải đúng cả chữ hoa/thường. Dùng file bạn có quyền chia sẻ.
+`rootMidi`: C3=48, C4=60, A4=69, C5=72. Xem mã âm sắc trong `assets/js/instruments.js`. Đường dẫn tương đối tính từ `index.html` để dùng được dưới đường dẫn repository của GitHub Pages. Giữ đúng chữ hoa/thường của tên file và dùng file bạn có quyền chia sẻ.
 
 Mẫu cá nhân đã lưu được ưu tiên hơn cấu hình chung. Muốn nghe bộ âm mới của trang, bấm Khôi phục mặc định cho nhạc cụ tương ứng. Nếu file cấu hình tải/giải mã thất bại, trang thông báo và tiếp tục dùng âm tổng hợp.
 
@@ -118,7 +119,7 @@ assets/js/cloud.js             Gọi API tài khoản/thư viện bằng fetch
 assets/js/community.js         Feed, công khai, bình luận, thích và theo dõi
 assets/js/midi-import.js       Chọn file/lớp, chuyển MIDI và báo cáo giản lược
 assets/js/preview.js           Nghe thử riêng, không thay bài đang soạn
-assets/vendor/                MIDI parser đóng gói và giấy phép
+assets/audio/                 Bộ mẫu CC0 và giấy phép đi kèm
 api/account.js                Vercel Function: đăng ký/đăng nhập/bài nhạc
 server/handler.cjs             Xác thực, phiên đăng nhập, phân quyền, giới hạn thử
 server/community.cjs           API bài công khai, bản sao và tương tác

@@ -21,7 +21,7 @@
   var playing = false, timerId = null, raf = 0, nextT = 0, stepI = 0, queue = [], finishAt = 0;
   var shownStep = null;
   var rec = false, recArmed = false, recT0 = 0, recTimer = null;
-  var practice = null;
+  var practice = null, practiceColumn = -1;
   var communityUI = null, previewPlayer = null, editingSongId = null;
   var cells = [], padEls = [], rlEls = [], hdEls = [];
 
@@ -154,6 +154,7 @@
     rlEls.forEach(function (el) { el.classList.toggle('active-hit', activeNotes.has(+el.dataset.i)); });
   }
   function scrollToColumn(c) {
+    if ($('#padDialog').open || $('#view-compose').hidden) return;
     var wrap = $('#rollWrap');
     var x = LABEL_W + c * STEP_W;
     if (x < wrap.scrollLeft + LABEL_W || x > wrap.scrollLeft + wrap.clientWidth - 70) wrap.scrollLeft = Math.max(0, x - 140);
@@ -165,7 +166,10 @@
   /* ---------- tập theo đèn: chờ người chơi, không tự phát ---------- */
   function clearPracticeLights() {
     padEls.forEach(function (pad) { pad.classList.remove('guide-next', 'guide-done'); pad.removeAttribute('aria-description'); });
-    document.querySelectorAll('.guide-cur').forEach(function (el) { el.classList.remove('guide-cur'); });
+    if (practiceColumn < 0) return;
+    cells[practiceColumn].forEach(function (el) { el.classList.remove('guide-cur'); });
+    hdEls[practiceColumn].classList.remove('guide-cur');
+    practiceColumn = -1;
   }
   function stopPractice(message) {
     practice = null; clearPracticeLights();
@@ -182,6 +186,7 @@
       padEls[i].setAttribute('aria-description', pending ? 'Nốt cần bấm tiếp' : 'Đã bấm đúng trong hợp âm này');
     });
     cells[step].forEach(function (el) { el.classList.add('guide-cur'); });
+    practiceColumn = step;
     hdEls[step].classList.add('guide-cur'); scrollToColumn(step);
     $('#guideStatus').hidden = false;
     $('#guideStatus').textContent = (wrong ? 'Chưa đúng · ' : '') + song.tracks[activeT].name + ' · bước ' + (practice.index + 1) + '/' + practice.sequence.length + ' (ô ' + (step + 1) + ') · Bấm ' + Array.from(practice.remaining).map(function (i) { return LETTERS[i]; }).join(' + ');
@@ -251,7 +256,7 @@
     while (queue.length && queue[0].time <= now) shownStep = queue.shift();
     // Cạnh đầu nốt đến sát cột phím đúng lúc audio bắt đầu bước tương ứng.
     var step = shownStep || queue[0];
-    if (step && !$('#view-compose').hidden) {
+    if (step && !$('#view-compose').hidden && !$('#padDialog').open) {
       var progress = step.advance ? Math.max(0, Math.min(1, (now - step.time) / step.duration)) : 0;
       $('#rollWrap').scrollLeft = NOTE_EDGE + (step.column + progress) * STEP_W;
     }
@@ -676,12 +681,12 @@
     function fullscreenStatus() {
       var full = !!fullscreenElement();
       $('#screenModeBtn').hidden = full;
-      $('#fullscreenStatus').textContent = full ? 'Đang toàn màn hình · Thu nhỏ để trở về.' : 'Đang phóng to trong trang · xoay ngang/dọc để đổi bố cục.';
+      $('#fullscreenStatus').textContent = full ? 'Đang toàn màn hình · Thu nhỏ để trở về.' : 'Đang phóng to trong trang.';
     }
     function requestFullscreen() {
       if (fullscreenElement()) { fullscreenStatus(); return; }
       var enter = document.documentElement.requestFullscreen || document.documentElement.webkitRequestFullscreen;
-      if (!enter) { $('#screenModeBtn').hidden = true; $('#fullscreenStatus').textContent = 'Trình duyệt dùng chế độ phóng to trong trang · xoay ngang/dọc để đổi bố cục.'; return; }
+      if (!enter) { $('#screenModeBtn').hidden = true; $('#fullscreenStatus').textContent = 'Đang phóng to trong trang.'; return; }
       var request = ++fullscreenRequest;
       try {
         Promise.resolve(enter.call(document.documentElement, { navigationUI: 'hide' })).then(function () {
@@ -700,6 +705,7 @@
       fullscreenRequest++; exitFullscreen();
       $('#expandPadsBtn').setAttribute('aria-expanded', 'false');
       $('#expandPadsBtn').focus({ preventScroll: true });
+      if (practiceColumn >= 0) scrollToColumn(practiceColumn);
     }
     function close() { if (dialog.open) dialog.close(); restore(); }
     $('#expandPadsBtn').addEventListener('click', function () {
@@ -725,165 +731,84 @@
     document.addEventListener('fullscreenchange', fullscreenStatus);
     document.addEventListener('webkitfullscreenchange', fullscreenStatus);
   }
-  function initPadBackground() {
-    var dialog = $('#padBgDialog');
-    if (!dialog) return;
-    var surface = $('#playSurface');
-    var overlayRange = $('#padBgOverlayRange');
-    var overlayVal = $('#padBgOverlayVal');
-    var blurRange = $('#padBgBlurRange');
-    var blurVal = $('#padBgBlurVal');
-    var uploadField = $('#padBgUploadField');
-    var fileInput = $('#padBgFileInput');
-    var uploadStatus = $('#padBgUploadStatus');
-    var clearCustomBtn = $('#clearCustomBgBtn');
-    var presetBtns = Array.from(document.querySelectorAll('.pad-bg-preset-btn'));
-
-    var currentPreset = 'default';
-    var currentOverlay = 25;
-    var currentBlur = 0;
-    var customBgData = '';
-
-    try {
-      currentPreset = localStorage.getItem('phongnhacsky.pad_bg_preset') || 'default';
-      var savedOverlay = localStorage.getItem('phongnhacsky.pad_bg_overlay');
-      if (savedOverlay !== null) currentOverlay = Math.min(80, Math.max(0, +savedOverlay || 25));
-      var savedBlur = localStorage.getItem('phongnhacsky.pad_bg_blur');
-      if (savedBlur !== null) currentBlur = Math.min(20, Math.max(0, +savedBlur || 0));
-      customBgData = localStorage.getItem('phongnhacsky.pad_bg_custom') || '';
-    } catch (_) {}
-
-    function apply() {
-      if (!surface) return;
-      var hasCustom = currentPreset === 'custom' && !!customBgData;
-      var bgStyle = hasCustom ? 'url("' + customBgData + '")' : 'none';
-
-      surface.style.setProperty('--pad-bg-image', bgStyle);
-      surface.style.setProperty('--pad-bg-blur', currentBlur + 'px');
-      surface.style.setProperty('--pad-bg-overlay-opacity', (currentOverlay / 100).toFixed(2));
-      surface.classList.toggle('has-custom-bg', hasCustom);
-
-      if (overlayRange) overlayRange.value = currentOverlay;
-      if (overlayVal) overlayVal.textContent = currentOverlay + '%';
-      if (blurRange) blurRange.value = currentBlur;
-      if (blurVal) blurVal.textContent = currentBlur + 'px';
-      if (uploadField) uploadField.hidden = currentPreset !== 'custom';
-      if (clearCustomBtn) clearCustomBtn.hidden = !customBgData;
-      if (uploadStatus) {
-        uploadStatus.textContent = customBgData
-          ? 'Đang dùng ảnh riêng của bạn (sắc nét, không vỡ).'
-          : 'Chọn file ảnh để làm nền riêng cho phím đàn.';
-      }
-
-      presetBtns.forEach(function (btn) {
-        btn.classList.toggle('active', btn.dataset.preset === currentPreset);
-      });
-
+  function initPadColors() {
+    var dialog = $('#padColorDialog'), surface = $('#playSurface'), trigger;
+    var root = document.documentElement, preview = $('.palette-preview'), reset = $('#resetPaletteBtn');
+    var padPicker = $('#customPadColor'), bgPicker = $('#customBackgroundColor');
+    var choices = Array.from(dialog.querySelectorAll('input[name="padColor"]'));
+    function read(key) {
+      try { return localStorage.getItem('phongnhacsky.' + key); } catch (_) { return null; }
+    }
+    function save(key, value) {
       try {
-        localStorage.setItem('phongnhacsky.pad_bg_preset', currentPreset);
-        localStorage.setItem('phongnhacsky.pad_bg_overlay', currentOverlay);
-        localStorage.setItem('phongnhacsky.pad_bg_blur', currentBlur);
-        if (customBgData) {
-          localStorage.setItem('phongnhacsky.pad_bg_custom', customBgData);
-        } else {
-          localStorage.removeItem('phongnhacsky.pad_bg_custom');
-        }
+        if (value) localStorage.setItem('phongnhacsky.' + key, value);
+        else localStorage.removeItem('phongnhacsky.' + key);
       } catch (_) {}
     }
+    function hex(value) { return /^#[0-9a-f]{6}$/i.test(value || '') ? value : ''; }
+    var saved = read('pad_color');
+    var selected = choices.find(function (choice) { return choice.value === saved; }) || choices[0];
+    var customKey = hex(read('custom_pad_color')), customBackground = hex(read('custom_background_color'));
 
-    presetBtns.forEach(function (btn) {
-      btn.addEventListener('click', function () {
-        currentPreset = this.dataset.preset;
-        apply();
-      });
+    function applyColors() {
+      root.dataset.palette = selected.value;
+      surface.dataset.padColor = preview.dataset.padColor = selected.value;
+      root.toggleAttribute('data-custom-key', !!customKey);
+      root.toggleAttribute('data-custom-background', !!customBackground);
+      root.style.setProperty('--custom-key', customKey);
+      root.style.setProperty('--custom-background', customBackground);
+      reset.hidden = !customKey && !customBackground;
+    }
+    function syncPickers() {
+      padPicker.value = customKey || hex(getComputedStyle(surface).getPropertyValue('--key-light').trim()) || '#ddd3fa';
+      bgPicker.value = customBackground || hex(getComputedStyle(root).getPropertyValue('--palette-tint').trim()) || '#8b9ce0';
+    }
+    function usePalette() {
+      customKey = customBackground = '';
+      save('custom_pad_color', '');
+      save('custom_background_color', '');
+      applyColors();
+      syncPickers();
+    }
+    selected.checked = true;
+    applyColors();
+
+    dialog.addEventListener('change', function (event) {
+      var choice = event.target;
+      if (choices.includes(choice) && choice.checked) {
+        selected = choice;
+        save('pad_color', choice.value);
+        usePalette();
+      }
     });
-
-    if (overlayRange) {
-      overlayRange.addEventListener('input', function () {
-        currentOverlay = +this.value;
-        apply();
-      });
-    }
-
-    if (blurRange) {
-      blurRange.addEventListener('input', function () {
-        currentBlur = +this.value;
-        apply();
-      });
-    }
-
-    if (fileInput) {
-      fileInput.addEventListener('change', function () {
-        var file = this.files && this.files[0];
-        if (!file) return;
-        if (!file.type || !file.type.startsWith('image/')) { toast('Vui lòng chọn file hình ảnh'); return; }
-        if (file.size > 15 * 1024 * 1024) { toast('Ảnh tối đa 15 MB'); return; }
-        var reader = new FileReader();
-        reader.onload = function (e) {
-          customBgData = e.target.result;
-          currentPreset = 'custom';
-          apply();
-          toast('Đã cập nhật ảnh nền bàn phím');
-        };
-        reader.readAsDataURL(file);
-      });
-    }
-
-    if (clearCustomBtn) {
-      clearCustomBtn.addEventListener('click', function () {
-        customBgData = '';
-        currentPreset = 'default';
-        try { localStorage.removeItem('phongnhacsky.pad_bg_custom'); } catch (_) {}
-        if (fileInput) fileInput.value = '';
-        apply();
-        toast('Đã gỡ ảnh nền riêng');
-      });
-    }
-
-    var resetBtn = $('#resetPadBgBtn');
-    if (resetBtn) {
-      resetBtn.addEventListener('click', function () {
-        currentPreset = 'default';
-        currentOverlay = 25;
-        currentBlur = 0;
-        customBgData = '';
-        try { localStorage.removeItem('phongnhacsky.pad_bg_custom'); } catch (_) {}
-        if (fileInput) fileInput.value = '';
-        apply();
-        toast('Đã khôi phục nền bàn phím mặc định');
-      });
-    }
-
-    function openDialog() {
-      if (typeof dialog.showModal === 'function') {
-        try { dialog.showModal(); } catch (_) { dialog.setAttribute('open', ''); }
-      } else {
-        dialog.setAttribute('open', '');
+    [[padPicker, 'custom_pad_color'], [bgPicker, 'custom_background_color']].forEach(function (entry) {
+      var picker = entry[0], key = entry[1];
+      function update() {
+        if (picker === padPicker) customKey = hex(picker.value);
+        else customBackground = hex(picker.value);
+        applyColors();
       }
+      picker.addEventListener('input', update);
+      picker.addEventListener('change', function () { update(); save(key, hex(picker.value)); });
+    });
+    reset.addEventListener('click', function () { usePalette(); selected.focus(); });
+    function openColors() {
+      if (dialog.open) return;
+      trigger = this;
+      syncPickers();
+      dialog.showModal();
+      dialog.querySelector('input:checked').focus();
     }
-    function closeDialog() {
-      if (dialog.open) {
-        if (typeof dialog.close === 'function') {
-          try { dialog.close(); } catch (_) { dialog.removeAttribute('open'); }
-        } else {
-          dialog.removeAttribute('open');
-        }
-      }
-    }
-
-    var padBgBtn = $('#padBgBtn');
-    if (padBgBtn) padBgBtn.addEventListener('click', openDialog);
-    var expandedBgBtn = $('#expandedBgBtn');
-    if (expandedBgBtn) expandedBgBtn.addEventListener('click', openDialog);
-    var closePadBgBtn = $('#closePadBgBtn');
-    if (closePadBgBtn) closePadBgBtn.addEventListener('click', closeDialog);
-    dialog.addEventListener('cancel', function (e) { e.preventDefault(); closeDialog(); });
-
-    apply();
+    $('#padColorBtn').addEventListener('click', openColors);
+    $('#expandedColorBtn').addEventListener('click', openColors);
+    $('#closePadColorBtn').addEventListener('click', function () { dialog.close(); });
+    dialog.addEventListener('close', function () {
+      if (trigger) trigger.focus({ preventScroll: true });
+    });
   }
   function initInterface() {
     initExpandedPads();
-    initPadBackground();
+    initPadColors();
     initAccount();
     $('#guideBtn').addEventListener('click', function () { if (practice) stopPractice(); else startPractice(); });
     $('#keyboardBtn').addEventListener('click', function () {
@@ -954,7 +879,7 @@
     $('#reqIn').addEventListener('input', buildPrompt);
     $('#copyPrompt').addEventListener('click', function () { copyText($('#promptOut').value, $('#promptOut')); });
     window.addEventListener('keydown', function (e) {
-      if (!keyboardEnabled || e.defaultPrevented || $('#accountDialog').open || $('#publishDialog').open || isEditing(e.target)) return;
+      if (!keyboardEnabled || e.defaultPrevented || $('#accountDialog').open || $('#publishDialog').open || $('#padColorDialog').open || isEditing(e.target)) return;
       if (e.ctrlKey || e.metaKey || e.altKey || e.repeat) return;
       var letter = /^Key[A-Z]$/.test(e.code || '') ? e.code.slice(3) : (e.key || '').toUpperCase();
       var i = letter.length === 1 ? LETTERS.indexOf(letter) : -1;

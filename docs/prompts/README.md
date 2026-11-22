@@ -15,8 +15,13 @@ Nhật ký phục vụ việc bàn giao giữa các phiên và môn học Prompt
 | 005 | 2026-11-20 | Thay nhập MIDI theo file kiểm tra người dùng gửi | Đã xong mã/kiểm thử 2026-11-21; chưa deploy | [005-midi-theo-ban-kiem-tra.md](005-midi-theo-ban-kiem-tra.md) |
 | 006 | 2026-11-21 | Cải tiến giao diện Liquid Glass UI, nền Sky, tùy chọn nền đàn và bố cục tab | Đã hoàn thành | [006-cai-tien-giao-dien-liquid-glass.md](006-cai-tien-giao-dien-liquid-glass.md) |
 | 007 | 2026-11-21 | Sửa khung soạn, Dàn nhạc và phản hồi phím trên ảnh nền | Đã hoàn thành tại máy | [007-sua-khung-soan-va-dan-nhac.md](007-sua-khung-soan-va-dan-nhac.md) |
+| 008 | 2026-11-21 | Kiểm tra link Vercel yêu cầu đăng nhập | Đã trả lời | [008-link-vercel-yeu-cau-dang-nhap.md](008-link-vercel-yeu-cau-dang-nhap.md) |
+| 009 | 2026-11-22 | Tối ưu đàn điện thoại, giữ lưới 3 hàng × 5 phím và tăng tương phản ảnh nền | Đã xong mã tại máy | [009-toi-uu-dan-dien-thoai.md](009-toi-uu-dan-dien-thoai.md) |
+| 010 | 2026-11-22 | Thay ảnh nền bằng màu phím đàn | Đã xong mã tại máy | [010-doi-mau-phim-dan.md](010-doi-mau-phim-dan.md) |
+| 011 | 2026-11-22 | Phối nền gradient, màu phím và thêm hai bộ chọn màu | Đã xong mã tại máy | [011-phoi-mau-giao-dien.md](011-phoi-mau-giao-dien.md) |
+| 012 | 2026-11-22 | Quy trình cập nhật bản Vercel đang chạy | Đã trả lời | [012-quy-trinh-cap-nhat-vercel.md](012-quy-trinh-cap-nhat-vercel.md) |
 
-**Số tiếp theo: 008** — đối chiếu các file/mục lục thực tế trước khi dùng số này.
+**Số tiếp theo: 013** — đối chiếu các file/mục lục thực tế trước khi dùng số này.
 
 ## Quy ước
 

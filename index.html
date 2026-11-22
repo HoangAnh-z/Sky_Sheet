@@ -33,9 +33,8 @@
 
     <main class="workspace">
       <aside class="instrument panel" aria-label="Đàn và thiết lập">
-        <div class="section-heading instrument-heading"><h2>Chơi đàn</h2><div class="row instrument-actions"><button class="btn small" id="padBgBtn" type="button" aria-haspopup="dialog" aria-controls="padBgDialog" title="Chọn phông nền và độ mờ cho phím đàn">🎨 Nền đàn</button><button class="btn small" id="expandPadsBtn" type="button" aria-haspopup="dialog" aria-controls="padDialog" aria-expanded="false">⛶ Phóng to</button></div></div>
+        <div class="section-heading instrument-heading"><h2>Chơi đàn</h2><div class="row instrument-actions"><button class="btn small" id="padColorBtn" type="button" aria-haspopup="dialog" aria-controls="padColorDialog">🎨 Màu sắc</button><button class="btn small" id="expandPadsBtn" type="button" aria-haspopup="dialog" aria-controls="padDialog" aria-expanded="false">⛶ Phóng to</button></div></div>
         <div class="play-surface" id="playSurface">
-        <div class="play-surface-backdrop" id="playSurfaceBackdrop" aria-hidden="true"></div>
         <div class="pad-area"><div class="pads" id="pads"></div></div>
         <p class="guide-status" id="guideStatus" role="status" aria-live="polite" hidden></p>
         <button class="btn keyboard-toggle" id="keyboardBtn" type="button" aria-pressed="false" aria-describedby="keyboardStatus">Bật chơi bằng bàn phím</button>
@@ -120,8 +119,8 @@
     </form>
   </dialog>
   <dialog class="pad-dialog" id="padDialog" aria-labelledby="padDialogTitle">
-    <div class="expanded-heading"><h2 id="padDialogTitle">Chơi đàn</h2><div class="row"><button class="btn small" id="expandedBgBtn" type="button" aria-haspopup="dialog" aria-controls="padBgDialog" title="Chọn phông nền và độ mờ cho đàn">🎨 Nền đàn</button><button class="btn small" id="screenModeBtn" type="button">⛶ Toàn màn hình</button><button class="btn" id="closePadDialog" type="button" autofocus>✕ Thu nhỏ</button></div></div>
-    <p class="hint fullscreen-status" id="fullscreenStatus" role="status">Xoay điện thoại để chọn bố cục chơi phù hợp.</p>
+    <div class="expanded-heading"><h2 id="padDialogTitle">Chơi đàn</h2><div class="row"><button class="btn small" id="expandedColorBtn" type="button" aria-haspopup="dialog" aria-controls="padColorDialog">🎨 Màu sắc</button><button class="btn small" id="screenModeBtn" type="button">⛶ Toàn màn hình</button><button class="btn" id="closePadDialog" type="button" autofocus>✕ Thu nhỏ</button></div></div>
+    <p class="hint fullscreen-status" id="fullscreenStatus" role="status">Đang phóng to trong trang.</p>
     <div id="expandedTransport"></div>
     <div class="expanded-play" id="expandedPlay"></div>
   </dialog>
@@ -130,34 +129,20 @@
     <p class="hint">Chọn bản đã lưu trong tài khoản. Bản công khai chỉ đổi khi bạn đăng/cập nhật lại. Người đăng không mặc nhiên là tác giả nhạc gốc.</p>
     <form id="publishForm" class="stack"><div class="field"><label class="cap" for="publishSelect">Bài trong thư viện của bạn</label><select id="publishSelect" required></select></div><div class="field"><label class="cap" for="publishDescription">Mô tả / cách tập</label><textarea id="publishDescription" rows="3" maxlength="1000"></textarea></div><div class="field"><label class="cap" for="publishComposer">Tác giả nhạc gốc (nếu biết)</label><input id="publishComposer" type="text" maxlength="80"></div><div class="field"><label class="cap" for="publishSource">Đường dẫn nguồn (nếu có)</label><input id="publishSource" type="url" maxlength="500" placeholder="https://..."></div><label class="check"><input id="publishConsent" type="checkbox" required> Tôi muốn chia sẻ bản nhạc này cho cộng đồng.</label><p id="publishStatus" class="hint" role="status"></p><button class="btn primary" id="publishSubmit" type="submit">Đăng / cập nhật công khai</button></form>
   </dialog>
-  <dialog class="account-dialog pad-bg-dialog" id="padBgDialog" aria-labelledby="padBgDialogTitle">
-    <div class="section-heading"><h2 id="padBgDialogTitle">🎨 Nền bàn phím đàn</h2><button class="btn small" id="closePadBgBtn" type="button" aria-label="Đóng bảng nền đàn">✕ Đóng</button></div>
-    <p class="hint">Tùy biến ảnh nền và độ mờ cho vùng đàn. Tất cả các phím đàn và nút bấm sẽ trong suốt nhìn xuyên qua ảnh nền.</p>
-    <div class="stack pad-bg-options">
-      <div class="field">
-        <label class="cap">Chế độ nền đàn</label>
-        <div class="pad-bg-presets" id="padBgPresets">
-          <button type="button" class="btn small pad-bg-preset-btn active" data-preset="default">✦ Mặc định (Kính lỏng)</button>
-          <button type="button" class="btn small pad-bg-preset-btn" data-preset="custom">🖼 Tải ảnh nền riêng</button>
-        </div>
-      </div>
-      <div class="field" id="padBgUploadField" hidden>
-        <label class="cap" for="padBgFileInput">Chọn file ảnh từ máy (PNG, JPG, WebP)</label>
-        <input type="file" id="padBgFileInput" accept="image/*">
-        <p class="hint" id="padBgUploadStatus">Ảnh được lưu giữ nguyên độ phân giải trên trình duyệt.</p>
-      </div>
-      <div class="field wide">
-        <div class="row-between"><label class="cap" for="padBgOverlayRange">Độ phủ kính / Tương phản phím</label><span class="badge" id="padBgOverlayVal">25%</span></div>
-        <input type="range" id="padBgOverlayRange" min="0" max="80" value="25">
-        <p class="hint">Chỉnh độ phủ để phím bấm và chữ nổi bật hoặc trong suốt hoàn toàn.</p>
-      </div>
-      <div class="field wide">
-        <div class="row-between"><label class="cap" for="padBgBlurRange">Độ làm mờ kính (Blur)</label><span class="badge" id="padBgBlurVal">0px</span></div>
-        <input type="range" id="padBgBlurRange" min="0" max="20" value="0">
-        <p class="hint">Kéo về 0px để ảnh nền luôn sắc nét không bị nhòe.</p>
-      </div>
-      <div class="row"><button class="btn small" id="resetPadBgBtn" type="button">Khôi phục mặc định</button><button class="btn small" id="clearCustomBgBtn" type="button" hidden>Gỡ ảnh nền</button></div>
+  <dialog class="account-dialog" id="padColorDialog" aria-labelledby="padColorDialogTitle">
+    <div class="section-heading"><h2 id="padColorDialogTitle">Màu giao diện</h2><button class="btn small" id="closePadColorBtn" type="button">Đóng</button></div>
+    <div class="palette-preview" aria-hidden="true"><span>Q</span><span>W</span><span>E</span></div>
+    <div class="pad-colors" role="radiogroup" aria-label="Bộ màu phối sẵn">
+      <label class="pad-color" data-pad-color="lavender"><input type="radio" name="padColor" value="lavender" checked>Tím lavender</label>
+      <label class="pad-color" data-pad-color="mint"><input type="radio" name="padColor" value="mint">Xanh bạc hà</label>
+      <label class="pad-color" data-pad-color="sky"><input type="radio" name="padColor" value="sky">Xanh trời</label>
+      <label class="pad-color" data-pad-color="rose"><input type="radio" name="padColor" value="rose">Hồng đào</label>
     </div>
+    <div class="color-controls">
+      <label for="customPadColor">Màu phím <input type="color" id="customPadColor" value="#ddd3fa"></label>
+      <label for="customBackgroundColor">Màu nền <input type="color" id="customBackgroundColor" value="#8b9ce0"></label>
+    </div>
+    <button class="btn small" id="resetPaletteBtn" type="button" hidden>Dùng màu của bộ</button>
   </dialog>
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
 </body>

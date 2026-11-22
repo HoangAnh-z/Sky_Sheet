@@ -6,8 +6,6 @@
   --on-accent: #ffffff;
   --sky: #168591;
   --rec: #d34e6d;
-  --pad-top: #ffffff;
-  --pad-bottom: #e8e4f4;
   --hit: #f4b85b;
   --body: 'Be Vietnam Pro', 'Segoe UI', system-ui, sans-serif;
   --mono: 'Cascadia Code', Consolas, monospace;
@@ -48,8 +46,6 @@
   --on-accent: #25183f;
   --sky: #7dd5da;
   --rec: #ff8ca5;
-  --pad-top: #323652;
-  --pad-bottom: #23263e;
   --hit: #f4b85b;
 
   /* Nền mặc định chủ đề Sky: Đêm sao và cực quang huyền ảo (Starlight Desert) */
@@ -78,6 +74,22 @@
   --roll-label: #1b1d36;
 
   color-scheme: dark;
+}
+
+:root { --palette-tint: #8b9ce0; --background-base: #f3eefb; }
+:root[data-palette="mint"] { --palette-tint: #53ac94; }
+:root[data-palette="sky"] { --palette-tint: #559fdb; }
+:root[data-palette="rose"] { --palette-tint: #d982ac; }
+:root[data-theme="dark"] { --background-base: #111326; }
+:root:is([data-palette]:not([data-palette="lavender"]), [data-custom-background]) {
+  --background-tone: var(--custom-background, var(--palette-tint));
+  --bg: color-mix(in srgb, var(--background-tone) 14%, var(--background-base));
+  --bg-gradient:
+    radial-gradient(at 12% 14%, color-mix(in srgb, var(--background-tone) 32%, transparent), transparent 55%),
+    radial-gradient(at 88% 15%, color-mix(in srgb, var(--background-tone) 24%, var(--background-base)), transparent 65%),
+    radial-gradient(at 82% 88%, color-mix(in srgb, var(--background-tone) 30%, transparent), transparent 60%),
+    radial-gradient(at 9% 90%, color-mix(in srgb, var(--sky) 15%, transparent), transparent 52%),
+    linear-gradient(140deg, var(--bg), var(--background-base) 58%, var(--bg));
 }
 
 * { box-sizing: border-box; }
@@ -280,7 +292,7 @@ p { margin: 0; }
 .instrument-heading h2 { flex-shrink: 0; }
 .instrument-actions { margin-left: auto; display: flex; align-items: center; gap: 6px; }
 
-/* Vùng chơi đàn: Tất cả phím đàn và nút chức năng trong suốt xuyên thấu */
+/* Vùng chơi đàn */
 .play-surface {
   position: relative;
   flex-shrink: 0;
@@ -291,31 +303,25 @@ p { margin: 0; }
   border: 1px solid var(--glass-border);
   box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.03);
 }
-.play-surface-backdrop {
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  pointer-events: none;
-  border-radius: inherit;
-  background-image: var(--pad-bg-image, none);
-  background-size: cover;
-  background-position: center;
-  image-rendering: -webkit-optimize-contrast;
-  filter: blur(var(--pad-bg-blur, 0px));
+/* Bảng màu phím đàn */
+[data-pad-color="lavender"] { --key-light: #ddd3fa; --key-dark: #493763; }
+[data-pad-color="mint"] { --key-light: #c6efdf; --key-dark: #265346; }
+[data-pad-color="sky"] { --key-light: #cce6fb; --key-dark: #2b4c6b; }
+[data-pad-color="rose"] { --key-light: #f9d5e0; --key-dark: #63394e; }
+.play-surface, .palette-preview {
+  --key-fill: var(--key-light);
+  --key-caption: #332942;
 }
-.play-surface-backdrop::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background-color: color-mix(in srgb, var(--panel) calc(var(--pad-bg-overlay-opacity, 0.25) * 100%), transparent);
-  border-radius: inherit;
+:root[data-theme="dark"] :is(.play-surface, .palette-preview) {
+  --key-fill: var(--key-dark);
+  --key-caption: #e5def3;
 }
-.play-surface > *:not(.play-surface-backdrop) {
-  position: relative;
-  z-index: 1;
+:root[data-custom-key] :is(.play-surface, .palette-preview) {
+  --key-fill: color-mix(in srgb, var(--custom-key) 35%, #fff);
 }
-
-/* Phím đàn trong suốt chuẩn Liquid Glass */
+:root[data-theme="dark"][data-custom-key] :is(.play-surface, .palette-preview) {
+  --key-fill: color-mix(in srgb, var(--custom-key) 31%, #211b33);
+}
 .pad-area { min-width: 0; }
 .pads {
   display: grid;
@@ -328,9 +334,7 @@ p { margin: 0; }
   aspect-ratio: 1;
   border: 1px solid rgba(255, 255, 255, 0.55);
   border-radius: 16px;
-  background: rgba(255, 255, 255, 0.2);
-  backdrop-filter: blur(12px) saturate(180%);
-  -webkit-backdrop-filter: blur(12px) saturate(180%);
+  background: var(--key-fill);
   color: var(--fg);
   display: grid;
   place-items: center;
@@ -343,7 +347,6 @@ p { margin: 0; }
 }
 :where(:root[data-theme="dark"]) .pad {
   border: 1px solid rgba(255, 255, 255, 0.18);
-  background: rgba(255, 255, 255, 0.08);
   box-shadow: inset 0 1.5px 2px rgba(255, 255, 255, 0.25), inset 0 -1.5px 2px rgba(0, 0, 0, 0.25), 0 4px 14px rgba(0, 0, 0, 0.25);
 }
 /* Hiệu ứng Liquid Glass Hover cho phím đàn như iPhone */
@@ -378,7 +381,7 @@ p { margin: 0; }
 .pad .k {
   position: absolute;
   bottom: 5px;
-  color: var(--muted);
+  color: var(--key-caption);
   font: 9px var(--mono);
   text-shadow: 0 1px 1px rgba(255, 255, 255, 0.5);
 }
@@ -388,10 +391,9 @@ p { margin: 0; }
 .pad.root {
   border-color: var(--sky);
   box-shadow: 0 0 0 1px var(--sky), 0 4px 16px color-mix(in srgb, var(--sky) 35%, transparent), inset 0 1.5px 2px rgba(255, 255, 255, 0.85);
-  background: color-mix(in srgb, var(--sky) 14%, rgba(255, 255, 255, 0.2));
 }
 .pad.guide-next:not(.hit) {
-  background: color-mix(in srgb, var(--gold) 25%, transparent);
+  background: color-mix(in srgb, var(--gold) 18%, var(--key-fill));
   box-shadow: 0 0 0 5px color-mix(in srgb, var(--gold) 45%, transparent), 0 0 22px 8px color-mix(in srgb, var(--gold) 45%, transparent);
 }
 .pad.guide-next::after {
@@ -405,22 +407,20 @@ p { margin: 0; }
 }
 .pad.guide-done:not(.hit) { border-color: var(--gold); }
 .pad.hit {
-  background: color-mix(in srgb, var(--hit) 70%, transparent);
+  background: var(--hit);
+  transition-duration: 0s;
   color: #35230d;
   transform: scale(.94);
   border-color: var(--hit);
   box-shadow: 0 0 24px rgb(244 184 91 / 55%), inset 0 1px 2px rgba(255, 255, 255, 0.7);
 }
 .pad.hit .k { color: #5d3e17; }
-.play-surface.has-custom-bg .pad.hit {
-  background: rgb(255 147 188 / 86%);
+  background: #ff93bc;
   color: #35152b;
   border-color: #ffe1ee;
   box-shadow: 0 0 16px rgb(255 147 188 / 75%), inset 0 1px 4px rgb(255 255 255 / 80%);
   transition-duration: 0s;
 }
-.play-surface.has-custom-bg .pad.hit .k { color: #471f3a; text-shadow: none; }
-
 /* Phím chức năng trong suốt trong vùng đàn */
 .play-surface .keyboard-toggle,
 .play-surface .guide-status {
@@ -429,12 +429,11 @@ p { margin: 0; }
   -webkit-backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.45);
 }
-:root[data-theme="dark"] .play-surface .keyboard-toggle,
-:root[data-theme="dark"] .play-surface .guide-status {
+:where(:root[data-theme="dark"]) .play-surface .keyboard-toggle,
+:where(:root[data-theme="dark"]) .play-surface .guide-status {
   background: rgba(255, 255, 255, 0.1);
   border: 1px solid rgba(255, 255, 255, 0.15);
 }
-
 .guide-status {
   margin-top: 10px;
   padding: 8px 10px;
@@ -936,34 +935,45 @@ dialog::backdrop {
 .publish-dialog form { margin-top: 16px; }
 .community-detail a { color: var(--sky); }
 
-/* Dialog Nền Đàn (Tinh gọn) */
-.pad-bg-dialog { width: min(480px, calc(100% - 24px)); }
-.pad-bg-options { margin-top: 14px; }
-.pad-bg-presets {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
-  margin-top: 6px;
-}
-.pad-bg-preset-btn {
-  text-align: center;
-  padding: 10px 14px;
-  font-size: 12px;
-  font-weight: 600;
+#padColorDialog { background: var(--bg); }
+.palette-preview {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 14px;
+  padding: 10px;
+  background: var(--bg-gradient);
+  border: 1px solid var(--line);
   border-radius: 10px;
 }
-.pad-bg-preset-btn.active {
-  border-color: var(--gold);
-  background: color-mix(in srgb, var(--gold) 22%, var(--panel));
-  color: var(--gold);
-  box-shadow: 0 0 0 1px var(--gold);
+.palette-preview span {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 32px;
+  background: var(--key-fill);
+  border: 1px solid var(--glass-border);
+  border-radius: 7px;
+  font-weight: 700;
 }
-.row-between {
+.pad-colors { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-top: 12px; }
+.pad-color {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   gap: 10px;
+  padding: 10px 12px;
+  background: var(--key-light);
+  color: #30263e;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  cursor: pointer;
 }
+.pad-color:has(input:checked) { border-color: #7056c8; }
+.pad-color input { margin: 0; accent-color: #7056c8; color-scheme: light; }
+.color-controls { display: grid; gap: 8px; margin-top: 14px; }
+.color-controls label { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.color-controls input { width: 56px; height: 36px; padding: 2px; cursor: pointer; }
+#resetPaletteBtn { margin-top: 12px; }
 
 @keyframes pulse { 50% { opacity: .65; } }
 
@@ -1033,7 +1043,6 @@ dialog::backdrop {
   .sheet-layout, .sound-layout { gap: 16px; }
   .midi-fields { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .songs { grid-template-columns: 1fr; }
-  .pad-bg-presets { grid-template-columns: 1fr; }
   .footer { font-size: 9px; gap: 8px; }
 }
 
@@ -1044,9 +1053,8 @@ dialog::backdrop {
 
 /* Chế độ Phóng To Phím Đàn (Pad Dialog) */
 html.pads-expanded, html.pads-expanded body { overflow: hidden; overscroll-behavior: none; }
+html.pads-expanded .studio { visibility: hidden; }
 .pad-dialog {
-  --pad-cols: 5;
-  --pad-rows: 3;
   position: fixed;
   inset: 0;
   width: 100%;
@@ -1083,16 +1091,16 @@ html.pads-expanded, html.pads-expanded body { overflow: hidden; overscroll-behav
   place-items: center;
   flex: 1;
   width: 100%;
-  min-height: calc(var(--pad-rows) * 44px + (var(--pad-rows) - 1) * var(--pad-gap));
+  min-height: calc(3 * 44px + 2 * var(--pad-gap));
 }
 .pad-dialog .pads {
-  --pad-size: min(calc((100cqw - (var(--pad-cols) - 1) * var(--pad-gap) - 16px) / var(--pad-cols)), calc((100cqh - (var(--pad-rows) - 1) * var(--pad-gap) - 16px) / var(--pad-rows)));
+  --pad-size: min(calc((100cqw - 4 * var(--pad-gap) - 16px) / 5), calc((100cqh - 2 * var(--pad-gap) - 16px) / 3));
   width: max-content;
   height: max-content;
   max-width: none;
   margin: 0;
-  grid-template-columns: repeat(var(--pad-cols), var(--pad-size));
-  grid-template-rows: repeat(var(--pad-rows), var(--pad-size));
+  grid-template-columns: repeat(5, var(--pad-size));
+  grid-template-rows: repeat(3, var(--pad-size));
   gap: var(--pad-gap);
 }
 .pad-dialog .pad {
@@ -1112,11 +1120,45 @@ html.pads-expanded, html.pads-expanded body { overflow: hidden; overscroll-behav
 .pad-dialog .keyboard-hint { display: none; }
 .fullscreen-status { font-size: 10px; flex-shrink: 0; }
 
-@media (max-width: 600px) and (orientation: portrait) {
-  .pad-dialog { --pad-cols: 3; --pad-rows: 5; }
+@media (hover: none) and (pointer: coarse), (max-width: 760px), (max-height: 480px) {
+  body { background-attachment: scroll; }
+  body::before, body::after, .pad::before, .btn::before { display: none; }
+  .panel, .transport, .btn, .pad, dialog, dialog::backdrop,
+  .play-surface .keyboard-toggle, .play-surface .guide-status {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+  .pad, .btn { transition: none; }
+  .pad:hover, .pad:active, .pad.hit, .btn:hover, .btn:active { transform: none; }
+  .pad { box-shadow: none; }
+  .pad.root { box-shadow: inset 0 0 0 1px var(--sky); }
+  .pad.hit { box-shadow: inset 0 0 0 2px var(--hit); }
+  .pad.guide-next:not(.hit) { box-shadow: inset 0 0 0 3px var(--gold); }
+  .pad.guide-next::after { display: none; }
+
+  .pad-dialog[open] { gap: 8px; }
+  .expanded-heading { flex-wrap: wrap; gap: 6px; }
+  .expanded-heading h2 { font-size: 13px; }
+  .expanded-heading .btn { font-size: 11px; min-height: 34px; padding: 5px 7px; }
+  .pad-dialog .play-surface { padding: clamp(6px, 2vmin, 12px); }
+  .pad-dialog .pad-area { --pad-gap: clamp(5px, 1.7vmin, 12px); container-type: normal; }
+  .pad-dialog .pads {
+    width: min(100%, 780px);
+    height: min(100%, 340px, 88vw);
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    grid-template-rows: repeat(3, minmax(44px, 1fr));
+  }
+  .pad-dialog .pad {
+    aspect-ratio: auto;
+    border-radius: clamp(8px, 3vmin, 18px);
+    align-content: center;
+    gap: 2px;
+    padding: 0;
+    line-height: 1.15;
+  }
+  .pad-dialog .pad .m { font-size: clamp(16px, 4.5vmin, 25px); }
+  .pad-dialog .pad .k { position: static; font-size: clamp(10px, 2.7vmin, 14px); }
   .pad-dialog .keyboard-status, .pad-dialog .keyboard-toggle { display: none; }
-  .expanded-heading h2 { font-size: 12px; }
-  .expanded-heading .btn { font-size: 11px; padding: 7px; }
 }
 @media (max-height: 480px) {
   .pad-dialog[open] { gap: 8px; }
@@ -1124,8 +1166,9 @@ html.pads-expanded, html.pads-expanded body { overflow: hidden; overscroll-behav
   .pad-dialog .guide-status { padding: 4px 8px; }
   .expanded-heading .btn { min-height: 32px; padding-block: 5px; }
 }
-@media (max-height: 480px) and (min-aspect-ratio: 3/2) {
-  .pad-dialog { --pad-cols: 8; --pad-rows: 2; }
+@media (max-width: 360px) {
+  .pad-dialog .transport-buttons { gap: 5px; }
+  .pad-dialog .transport-buttons .btn { font-size: 11px; }
 }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }

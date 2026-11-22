@@ -1,40 +1,46 @@
 # Tiến độ hiện tại — Phòng Nhạc Sky
 
-- Cập nhật: **2026-11-21**, múi giờ `Asia/Saigon`.
-- Bản ghi mới nhất: [007 — Sửa Khung soạn nhạc và Dàn nhạc](prompts/007-sua-khung-soan-va-dan-nhac.md). Giao diện Liquid Glass ở [006](prompts/006-cai-tien-giao-dien-liquid-glass.md), nhập MIDI ở [005](prompts/005-midi-theo-ban-kiem-tra.md).
+- Cập nhật: **2026-11-22**, múi giờ `Asia/Saigon`.
+- Bản ghi mới nhất: [012 — Quy trình cập nhật Vercel](prompts/012-quy-trinh-cap-nhat-vercel.md). Thay đổi giao diện mới nhất ở [011](prompts/011-phoi-mau-giao-dien.md).
 
 ## Đang ở đâu?
 
-**Đã có mã FE + BE + CSDL, giao diện Liquid Glass UI, nền chủ đề Sky, tùy chọn nền đàn, bố cục tab soạn nhạc 7:3, nhập MIDI và cộng đồng chạy/kiểm thử tại máy; chưa triển khai và kiểm chứng bản online trên Vercel/Turso.** Đã chuẩn bị hướng dẫn deploy cho người mới trong [README](../README.md#deploy-vercel--turso-lần-đầu).
+**Bản Production đã chạy tại [musicsheet-azure.vercel.app](https://musicsheet-azure.vercel.app/).** Trang chính và API công khai trả 200. URL riêng của deployment trong yêu cầu 008 chuyển sang đăng nhập Vercel.
 
 | Phần | Trạng thái hiện tại |
 |---|---|
-| Frontend | Liquid Glass UI, nền mây trời/cực quang Sky, giữ tông màu gốc; tùy chọn nền đàn kèm chỉnh độ mờ (thường & phóng to); tab soạn nhạc 7:3; thẻ thư viện grid |
-| Backend | API Node.js qua `api/account.js`, dự kiến chạy Vercel Functions |
+| Frontend | Liquid Glass UI, bốn bộ màu nền gradient và phím có biến thể sáng/tối. Cho chọn riêng từng màu và lưu theo trình duyệt |
+| Backend | API Node.js qua `api/account.js`. API phiên và Cộng đồng trên Vercel đã trả 200 |
 | Database tại máy | SQLite tại `.data/sky.db` khi chạy `npm run dev` không cấu hình Turso |
-| Database online | Đã viết kết nối Turso bằng `@libsql/client`; chưa xác nhận database/token thật |
+| Database online | API Cộng đồng trên Vercel đọc được danh sách. Phiên 008 kiểm tra qua API công khai |
 | Tài khoản | Đăng ký, đăng nhập, đăng xuất bằng username/mật khẩu; không dùng email/bí danh email |
 | Dữ liệu cá nhân | Lưu/mở/xóa bài, nhập bài khách; backend kiểm tra chủ sở hữu |
 | GitHub Pages | Chế độ khách; không chạy API tài khoản |
-| Triển khai online | Còn chờ tài khoản/kết nối dịch vụ, đưa mã lên GitHub, cấu hình Turso và deploy |
+| Triển khai online | Production có domain công khai. Dùng domain chính để chia sẻ và giữ cookie đăng nhập của app trên cùng địa chỉ |
 | Nhật ký học prompting | Đã thiết lập từ công việc Vercel + Turso; tiếp tục theo AGENTS.md |
 | Nhập MIDI | Đã thay theo mẫu người dùng: tự tạo toàn bài, tự tìm tông/quy nốt, bảng chỉnh tên/nhạc cụ/quãng tám từng lớp; nghe thử và đưa vào ô soạn; tối đa 4.096 bước/lớp |
 | PDF/OMR | Để sau theo yêu cầu, chưa triển khai |
 | Bài công khai/copy về thư viện | Đã làm snapshot công khai, tìm/lọc/phân trang, nghe thử, copy riêng có nguồn, không ghi đè bài trùng tên |
 | Bình luận/thích/theo dõi | Đã làm cơ bản trong cùng backend; có xóa bình luận theo quyền, lọc feed theo dõi; chưa có chat/thông báo/realtime |
 | Khung soạn nhạc | Nốt tím cuộn theo nhịp phát về cột phím cố định. Cột sáng khi nốt của lớp đang xem tới mép |
-| Chơi chồng lớp / tập | Ô Chơi chỉ hiện khi chọn chồng lớp. Quầng tím cho nốt tập, viền xanh cho Đô, phím đánh sáng hồng khi dùng ảnh nền riêng |
-| Phóng to điện thoại | Yêu cầu native fullscreen có fallback, lưới thích ứng dọc/ngang, bảo toàn node, tiến độ và giữ nền phím đã chọn |
+| Chơi chồng lớp / tập | Ô Chơi chỉ hiện khi chọn chồng lớp. Quầng tím cho nốt tập, viền xanh cho Đô, phím sáng vàng khi chơi |
+| Phóng to điện thoại | Bản tại máy giữ 3 hàng × 5 phím cả ngang lẫn dọc, có chế độ phóng to trong trang và cùng bảng màu phím |
 
 ## Kết quả kiểm tra đã có
 
-Kết quả mới nhất được chạy trong nhiệm vụ **007** (2026-11-21):
+Nhiệm vụ **011** chạy `npm test` (115 kiểm tra), Chromium cho bộ tính năng và build. Kiểm tra lưu màu, đổi sáng/tối, khôi phục bộ màu và bố cục bảng màu ở 390 px.
+
+Nhiệm vụ **010** chạy `npm test` (115 kiểm tra), kiểm tra trình duyệt cho bộ tính năng và build. Đã kiểm tra áp dụng màu, lưu qua tải lại và đổi màu từ chế độ phóng to.
+
+Nhiệm vụ **009** (2026-11-22) chạy lại `npm test` (115 kiểm tra) và Chromium. Kiểm tra giao diện WebKit cấu hình iPhone ở cả hai hướng. Xem kết quả và giới hạn trong [nhật ký 009](prompts/009-toi-uu-dan-dien-thoai.md).
+
+Kiểm tra cụ thể của nhiệm vụ **007** (2026-11-21):
 
 - `npm test`: **115 kiểm tra qua** — 26 nhạc, 25 backend, 12 frontend/API, 14 MIDI, 27 cộng đồng và 11 giao diện. Đồng hồ âm thanh giả lập xác nhận nốt chưa tới mép không làm sáng cột, nốt lớp đệm vẫn phát nhưng chỉ nốt của lớp đang xem làm sáng cột.
 - `npm run build`: thành công, tạo `public/index.html` và `public/assets`; không đưa mã server/DB/bí mật vào thư mục static.
 - Hai bộ Chromium `tests/browser.cjs` và `tests/features-browser.cjs` qua luồng tài khoản, MIDI, cộng đồng và fullscreen. Kiểm tra thêm trên 1440×1000, 390×844 và 844×390: nốt cuối chạm mép, cột phím đứng yên, nốt tím ở cả hai giao diện, hai hàng điều khiển Dàn nhạc thẳng hàng và màu phím khi dùng ảnh riêng.
 - Đã kiểm tra bản localhost với MIDI 769 bước, hai lớp tương ứng ảnh lỗi, chụp ở 1920×864 và xem bố cục. Phiên sau cần xác minh lại server có còn chạy.
-- Chưa kiểm tra deploy thật hoặc kết nối Turso thật.
+- Nhiệm vụ 008 xác nhận trang và API công khai online. Đăng nhập/lưu bài cá nhân trên production chưa được kiểm tra trong phiên này.
 
 Các nhiệm vụ 002/003 ghi tài liệu và phân tích. Tính năng nền thuộc 004, bộ nhập MIDI được thay trong 005, giao diện Liquid Glass được thêm trong 006 và sửa trong 007.
 
@@ -47,7 +53,7 @@ Người dùng đã đồng ý triển khai trong [004](prompts/004-midi-cong-do
 3. Đã thêm 5 bảng cộng đồng bằng khởi tạo bổ sung, không đổi cột bảng cũ. Kiểm thử xác nhận bài cũ vẫn còn. Cần restart backend/redeploy để dùng mã và schema mới.
 4. PDF/OMR chưa làm theo yêu cầu người dùng; chưa triển khai MusicXML, thông báo hoặc chat riêng.
 
-Phần triển khai Vercel/Turso thật đang chờ từ nhiệm vụ 001 vẫn còn. Mã mới đã chạy tại máy, không được coi là đã có trên bản online.
+Xem bản ghi 008 để biết địa chỉ chia sẻ trên Vercel và những kiểm tra đã chạy trên bản online.
 
 ## Các quyết định cần giữ
 
@@ -61,15 +67,7 @@ Phần triển khai Vercel/Turso thật đang chờ từ nhiệm vụ 001 vẫn 
 
 ## Bước tiếp theo
 
-Chờ yêu cầu tiếp theo của người dùng; không tự triển khai chỉ vì đọc file này. Nếu tiếp tục đưa lên online:
-
-1. Kiểm tra thay đổi Git hiện tại và đưa mã cần thiết lên repository theo phạm vi người dùng giao.
-2. Tạo/kết nối tài khoản Vercel, import repo, Framework `Other`, Node 24, dùng `vercel.json` hiện có.
-3. Tạo/kết nối Turso, cấu hình `TURSO_DATABASE_URL` và `TURSO_AUTH_TOKEN` ở backend Vercel; không ghi giá trị vào nhật ký/frontend.
-4. Redeploy, kiểm tra tài khoản và thư viện trên link thật với ít nhất hai người dùng.
-5. Ghi URL, kết quả kiểm tra và việc còn chờ vào bản ghi nhiệm vụ và file này.
-
-Tại lúc tạo nhật ký, Git còn nhiều thay đổi mã nguồn từ công việc trước chưa commit trong workspace. Phiên này không commit/push/deploy. Ở phiên mới cần kiểm tra lại `git status`, không suy ra tình trạng remote từ ghi chú này.
+Dùng domain Production để thử luồng tài khoản và thư viện khi có yêu cầu. Trước mỗi lần cập nhật online, kiểm tra nhánh Git, cấu hình trong [README](../README.md#deploy-vercel--turso-lần-đầu), và ghi kết quả kiểm tra theo phạm vi người dùng giao.
 
 ## File nên mở khi tiếp tục
 

@@ -29,7 +29,9 @@ async function register(page, name) {
   try {
     browser = await chromium.launch({ headless: true, ...(process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH ? { executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH } : {}) });
     for (const viewport of [{ width: 1440, height: 1000 }, { width: 390, height: 844 }, { width: 844, height: 390 }]) {
-      const context = await browser.newContext({ viewport }); const page = await context.newPage(); const errors = [];
+      const mobile = viewport.width < 1000;
+      const context = await browser.newContext({ viewport, hasTouch: mobile, isMobile: mobile });
+      const page = await context.newPage(); const errors = [];
       page.on('pageerror', error => errors.push(error.message));
       await page.goto(origin); await page.waitForFunction(() => !document.querySelector('#saveBtn').disabled);
       const theme = viewport.width === 390 ? 'light' : 'dark';
@@ -51,21 +53,45 @@ async function register(page, name) {
       await page.locator('#liveMode').selectOption('active'); assert.equal(await page.locator('#inst').isDisabled(), false);
       assert.equal(await page.locator('.live-check').first().isVisible(), false);
       assert.equal(await page.locator('#activeTrackLabel').count(), 0);
-      await page.locator('#padBgBtn').click();
-      await page.locator('.pad-bg-preset-btn[data-preset="custom"]').click();
-      const png = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+a1p0AAAAASUVORK5CYII=', 'base64');
-      await page.locator('#padBgFileInput').setInputFiles({ name: 'background.png', mimeType: 'image/png', buffer: png });
-      await page.locator('#playSurface.has-custom-bg').waitFor();
-      await page.locator('#closePadBgBtn').click();
-      const press = await page.locator('.pad[data-i="0"]').evaluate(pad => {
-        const before = getComputedStyle(pad).backgroundColor;
-        const allPadsFit = pad.parentElement.getBoundingClientRect().bottom < document.querySelector('#playSurface').getBoundingClientRect().bottom;
-        pad.click();
-        return { before, pressed: getComputedStyle(pad).backgroundColor, allPadsFit };
+      await page.locator('#padColorBtn').click();
+      await page.getByRole('radio', { name: 'Xanh bạc hà' }).check();
+      await page.locator('#closePadColorBtn').click();
+      await page.reload();
+      assert.equal(await page.locator('#playSurface').getAttribute('data-pad-color'), 'mint');
+      const pad = page.locator('.pad[data-i="0"]');
+      assert.equal(await pad.evaluate(el => getComputedStyle(el).backgroundColor),
+        theme === 'dark' ? 'rgb(38, 83, 70)' : 'rgb(198, 239, 223)');
+      if (viewport.width === 390) {
+        const appearance = () => pad.evaluate(el => ({
+          key: getComputedStyle(el).backgroundColor, background: getComputedStyle(document.body).backgroundImage
+        }));
+        const mint = await appearance();
+        await page.locator('#padColorBtn').click();
+        await page.locator('#customPadColor').fill('#ec8660');
+        await page.locator('#customBackgroundColor').fill('#6596d9');
+        await page.locator('#closePadColorBtn').click();
+        await page.reload();
+        const custom = await appearance();
+        assert.notEqual(custom.key, mint.key);
+        assert.notEqual(custom.background, mint.background);
+        assert.match(custom.background, /radial-gradient/);
+        await page.locator('#themeBtn').click();
+        const dark = await appearance();
+        assert.notEqual(dark.key, custom.key);
+        assert.notEqual(dark.background, custom.background);
+        await page.locator('#themeBtn').click();
+        await page.locator('#padColorBtn').click();
+        assert.equal(await page.locator('#customPadColor').inputValue(), '#ec8660');
+        assert.equal(await page.locator('#customBackgroundColor').inputValue(), '#6596d9');
+        await page.locator('#resetPaletteBtn').click();
+        await page.locator('#closePadColorBtn').click();
+        assert.deepEqual(await appearance(), mint);
+      }
+      const press = await pad.evaluate(el => {
+        el.click();
+        return getComputedStyle(el).backgroundColor;
       });
-      assert.notEqual(press.before, press.pressed);
-      assert.equal(press.pressed, 'rgba(255, 147, 188, 0.86)');
-      assert.equal(press.allPadsFit, true);
+      assert.equal(press, 'rgb(244, 184, 91)');
       await page.getByRole('tab', { name: 'Bản nhạc & AI', exact: true }).click();
       await page.locator('#sheet').fill('# bpm 60\n' + '- '.repeat(29) + 'Q - W');
       await page.locator('#applyBtn').click();
@@ -132,20 +158,52 @@ async function register(page, name) {
       await page.locator('#applyBtn').click();
       await page.locator('#guideBtn').click();
       assert.equal(await page.locator('.pad.guide-next').count(), 2);
-      const light = await page.locator('.pad.guide-next').first().evaluate(node => ({ shadow: getComputedStyle(node).boxShadow, blur: getComputedStyle(node, '::after').filter, border: getComputedStyle(node, '::after').borderWidth }));
-      assert.notEqual(light.shadow, 'none'); assert.equal(light.border, '3px'); assert.match(light.blur, /blur/);
+      const light = await page.locator('.pad.guide-next').first().evaluate(node => ({ shadow: getComputedStyle(node).boxShadow, halo: getComputedStyle(node, '::after').display }));
+      assert.notEqual(light.shadow, 'none');
+      assert.equal(light.halo === 'none', mobile);
+      // Some mobile browsers only support the in-page fullscreen fallback.
+      if (viewport.width === 390) await page.evaluate(() => {
+        for (const name of ['requestFullscreen', 'webkitRequestFullscreen']) {
+          Object.defineProperty(document.documentElement, name, { value: undefined });
+        }
+      });
       await page.locator('#expandPadsBtn').click();
       await page.waitForFunction(() => document.querySelector('#padDialog').open);
       await page.waitForTimeout(250);
-      const metrics = await page.evaluate(() => {
-        const dialog = document.querySelector('#padDialog').getBoundingClientRect(), pad = document.querySelector('.pad').getBoundingClientRect();
-        return { x: dialog.x, y: dialog.y, width: dialog.width, height: dialog.height, viewport: [innerWidth, innerHeight], pad: [pad.width, pad.height], full: !!document.fullscreenElement };
-      });
-      assert.ok(Math.abs(metrics.width - metrics.viewport[0]) < 2); assert.ok(Math.abs(metrics.height - metrics.viewport[1]) < 2);
-      if (viewport.width === 390) assert.ok(metrics.pad[0] >= 90, JSON.stringify(metrics));
-      if (viewport.width === 844) assert.ok(metrics.pad[0] >= 55, JSON.stringify(metrics));
+      const assertLayout = async () => {
+        const metrics = await page.evaluate(() => {
+          const modal = document.querySelector('#padDialog'), dialog = modal.getBoundingClientRect();
+          const keys = Array.from(document.querySelectorAll('.pad'));
+          const pads = keys.map(el => el.getBoundingClientRect());
+          const rows = new Map();
+          for (const key of keys) rows.set(key.offsetTop, (rows.get(key.offsetTop) || 0) + 1);
+          const fit = pads.every(rect => rect.left >= dialog.left && rect.right <= dialog.right && rect.top >= dialog.top && rect.bottom <= dialog.bottom);
+          return { width: dialog.width, height: dialog.height, viewport: [innerWidth, innerHeight], pad: [pads[0].width, pads[0].height], rows: [...rows.values()], fit, full: !!document.fullscreenElement };
+        });
+        assert.ok(Math.abs(metrics.width - metrics.viewport[0]) < 2, JSON.stringify(metrics));
+        assert.ok(Math.abs(metrics.height - metrics.viewport[1]) < 2, JSON.stringify(metrics));
+        assert.deepEqual(metrics.rows, [5, 5, 5], JSON.stringify(metrics));
+        assert.ok(metrics.fit, JSON.stringify(metrics));
+        assert.ok(metrics.pad.every(size => size >= 44), JSON.stringify(metrics));
+        return metrics;
+      };
+      const metrics = await assertLayout();
+      await page.locator('#expandedColorBtn').click();
+      assert.equal(await page.getByRole('radio', { name: 'Xanh bạc hà' }).isChecked(), true);
+      await page.getByRole('radio', { name: 'Xanh trời' }).check();
+      await page.locator('#closePadColorBtn').click();
+      assert.equal(await page.locator('#expandedPlay #playSurface').getAttribute('data-pad-color'), 'sky');
       assert.equal(await page.locator('.pad.guide-next').count(), 2);
       await page.screenshot({ path: path.join(output, `expanded-${viewport.width}.png`) });
+      if (viewport.width === 390) {
+        assert.equal(metrics.full, false);
+        await page.setViewportSize({ width: 568, height: 320 });
+        await assertLayout();
+        await page.locator('.pad.guide-next').first().tap();
+        assert.equal(await page.locator('.pad.guide-done').count(), 1);
+        await page.setViewportSize(viewport);
+        await assertLayout();
+      }
       await page.locator('#closePadDialog').click(); await page.waitForFunction(() => !document.fullscreenElement);
       assert.equal(await page.locator('#guideBtn').getAttribute('aria-pressed'), 'true');
       await page.locator('#guideBtn').click();

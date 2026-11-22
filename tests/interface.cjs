@@ -45,27 +45,15 @@ function check(name, fn) { fn(); checks.push(name); }
       assert.equal(full, null); assert.equal($('padDialog').open, false); assert.ok($('playSurface').closest('.instrument')); assert.ok(!w.document.documentElement.classList.contains('pads-expanded'));
     });
 
-    $('padBgBtn').click();
-    check('Pad background dialog opens and supports custom background image and overlay/blur controls', () => {
-      assert.equal($('padBgDialog').open, true);
-      const customBtn = w.document.querySelector('.pad-bg-preset-btn[data-preset="custom"]');
-      assert.ok(customBtn);
-      customBtn.click();
-      assert.equal(w.localStorage.getItem('phongnhacsky.pad_bg_preset'), 'custom');
-      assert.equal($('padBgUploadField').hidden, false);
-
-      $('padBgOverlayRange').value = '40';
-      $('padBgOverlayRange').dispatchEvent(new w.Event('input'));
-      assert.equal($('playSurface').style.getPropertyValue('--pad-bg-overlay-opacity'), '0.40');
-      assert.equal($('padBgOverlayVal').textContent, '40%');
-
-      $('padBgBlurRange').value = '6';
-      $('padBgBlurRange').dispatchEvent(new w.Event('input'));
-      assert.equal($('playSurface').style.getPropertyValue('--pad-bg-blur'), '6px');
-      assert.equal($('padBgBlurVal').textContent, '6px');
-
-      $('closePadBgBtn').click();
-      assert.equal($('padBgDialog').open, false);
+    $('padColorBtn').click();
+    check('Pad palette applies colors and stores the selected value', () => {
+      assert.equal($('padColorDialog').open, true);
+      assert.equal($('playSurface').dataset.padColor, 'lavender');
+      w.document.querySelector('input[name="padColor"][value="mint"]').click();
+      assert.equal($('playSurface').dataset.padColor, 'mint');
+      assert.equal(w.localStorage.getItem('phongnhacsky.pad_color'), 'mint');
+      $('closePadColorBtn').click();
+      assert.equal($('padColorDialog').open, false);
     });
 
     check('Compose view places sequencer on the left and arrangement on the right', () => {
@@ -84,18 +72,18 @@ function check(name, fn) { fn(); checks.push(name); }
       assert.ok(first.querySelector('.rl-note'));
     });
 
-    check('Pad background settings persist across normal and expanded playing modes', () => {
+    check('Pad palette applies to the same instrument in expanded mode and restores focus', () => {
       w.document.documentElement.requestFullscreen = () => Promise.resolve();
       $('expandPadsBtn').click();
       assert.ok($('expandedPlay').contains($('playSurface')));
-      assert.equal($('playSurface').style.getPropertyValue('--pad-bg-blur'), '6px');
-      $('expandedBgBtn').click();
-      assert.equal($('padBgDialog').open, true);
-      $('resetPadBgBtn').click();
-      assert.equal($('playSurface').style.getPropertyValue('--pad-bg-image'), 'none');
-      assert.equal(w.localStorage.getItem('phongnhacsky.pad_bg_preset'), 'default');
-      $('closePadBgBtn').click();
+      assert.equal($('playSurface').dataset.padColor, 'mint');
+      $('expandedColorBtn').click();
+      assert.equal($('padColorDialog').open, true);
+      w.document.querySelector('input[name="padColor"][value="lavender"]').click();
+      $('closePadColorBtn').click();
+      assert.equal(w.document.activeElement, $('expandedColorBtn'));
       $('closePadDialog').click();
+      assert.equal($('playSurface').dataset.padColor, 'lavender');
     });
 
     check('Playback advances between scheduled notes and lights only arriving notes of the visible track', () => {

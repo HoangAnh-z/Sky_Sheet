@@ -33,7 +33,8 @@ Sau đó mở http://localhost:5173. Dừng server bằng Ctrl+C.
 - **Âm thanh**: thay mẫu âm theo từng nhạc cụ.
 - Sáng/tối: nút ở góc phải, lựa chọn được lưu trong trình duyệt. Lần đầu theo giao diện hệ thống.
 - **Bật chơi bằng bàn phím**: bấm nút dưới đàn để kích hoạt QWERT / ASDFG / ZXCVB và mở âm thanh. Mỗi lần mở trang, bàn phím bắt đầu ở trạng thái tắt; bấm trực tiếp lên đàn luôn hoạt động. Khi nhập tên/bản nhạc, phím đàn tạm dừng để bạn gõ bình thường; bấm lên đàn để tiếp tục. Sau khi đổi lựa chọn âm sắc/chế độ, trang tự bỏ focus khỏi danh sách để phím đàn nhận lại ngay. Phím dựa trên vị trí vật lý để bộ gõ tiếng Việt không làm đổi nốt.
-- **⛶ Phóng to** ở góc vùng đàn: yêu cầu toàn màn hình trình duyệt khi được hỗ trợ; nếu không được phép, vẫn mở vùng chơi chiếm viewport. Điện thoại dọc dùng lưới 3×5, màn hình ngang thấp dùng 8 cột/2 hàng để phím lớn hơn, màn hình rộng thông thường dùng 5×3. Các nút Phát/Ghi/Tập theo đèn và Lặp vẫn dùng được. **✕ Thu nhỏ** khôi phục vị trí các nút và thoát fullscreen do ứng dụng mở, giữ nguyên bài/tiến độ tập. Trình duyệt có thể dùng Escape trước để thoát fullscreen; chế độ phóng to trong trang vẫn có thể còn mở, dùng Thu nhỏ để trở về.
+- **⛶ Phóng to** mở đàn với **3 hàng, mỗi hàng 5 phím** ở cả chiều ngang và dọc. Trình duyệt có thể mở fullscreen gốc hoặc phóng to trong trang. Các nút Phát/Ghi/Tập theo đèn và Lặp vẫn dùng được. **✕ Thu nhỏ** trả đàn về vị trí cũ và giữ tiến độ tập.
+- **Màu sắc** phối màu phím và nền gradient theo bốn bộ: tím lavender mặc định, xanh bạc hà, xanh trời và hồng đào. Có thể tự chọn từng màu hoặc bấm **Dùng màu của bộ** để khôi phục. Các màu tự điều chỉnh theo giao diện sáng/tối và được lưu trên trình duyệt.
 
 Ba cách chơi nhiều lớp:
 

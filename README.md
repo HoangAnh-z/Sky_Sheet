@@ -42,7 +42,7 @@ Ba cách chơi nhiều lớp:
 
 1. **Chồng âm sắc**: mục “Khi bấm đàn” → “Chồng các lớp có bật Chơi”. Ô **Chơi** hiện trong Dàn nhạc khi bật chế độ này. Một phím phát cùng nốt trên các lớp đã tích, theo quãng tám, âm lượng và M/S của từng lớp. Chỉnh nhạc cụ ở từng thẻ trong Dàn nhạc. Có thể bấm nhiều phím cùng lúc hoặc dùng nhiều ngón trên màn hình cảm ứng.
 2. **Chơi trên nền**: bấm Phát để chạy bản phối, rồi tự chơi lớp đang chọn. Để tránh trùng giai điệu có sẵn, bật M ở lớp giai điệu cũ rồi thêm một lớp mới để tự đàn. M tắt cả phần phát và tiếng đàn tay của lớp đó.
-3. **Ghi lần lượt**: chọn lớp → Ghi từ đàn → bấm phím đầu tiên để bắt đầu. Bản ghi thay nốt của lớp đó và các lớp khác phát làm nền nếu bật tùy chọn. Khi ghi từ một bài đã mở, bản nháp bắt đầu với tiêu đề trống. Đặt tên trong **Bản nhạc & AI** rồi lưu thành bài khác. Có thể ghi thêm các lớp trên cùng bản nháp trước khi lưu. Trong khi ghi, thay lớp, nhạc cụ và tốc độ bị khóa. Rời tab trình duyệt kết thúc bản ghi. Khi chỉ phát nhạc, bài tiếp tục nếu trình duyệt và hệ điều hành cho phép phát nền.
+3. **Ghi từng bước**: chọn lớp rồi bấm **Ghi từ đàn** nếu lớp trống, hoặc **Ghi tiếp** để nối sau nốt hoặc bước nghỉ cuối. **Dừng ghi** giữ đoạn vừa nhập. Dùng **Soạn nhạc mới** để mở bài trống, hoặc **Xóa lớp này** để làm lại riêng lớp đang chọn. Mỗi lần bấm ghi một bước. Dùng **Space** để nghỉ, giữ **Shift** khi bấm các nốt cần ghi cùng cột rồi thả để chốt hợp âm. Trên điện thoại, hai nút **Nghỉ** và **Hợp âm** nằm ngay dưới các phím trong **Chơi đàn**. Khung soạn cuộn tới bước vừa ghi. Nếu ghi từ bài đã mở, bạn có thể đặt tên cho bản nháp trong **Bản nhạc & AI** rồi lưu thành bài khác. Rời tab trình duyệt dừng lượt ghi.
 
 ### Tập theo đèn
 

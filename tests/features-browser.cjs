@@ -309,25 +309,84 @@ async function register(page, name) {
       assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
       const newSong = page.getByRole('button', { name: 'Soạn nhạc mới' });
       const previousText = await page.locator('#sheet').inputValue();
-      const confirmNew = async accept => {
-        const dialog = page.waitForEvent('dialog');
-        const click = newSong.click();
-        const prompt = await dialog;
-        const message = prompt.message();
-        if (accept) await prompt.accept();
-        else await prompt.dismiss();
-        await click;
-        assert.match(message, /thay đổi chưa lưu/);
-      };
-      await confirmNew(false);
+      const draftDialog = page.getByRole('dialog', { name: 'Bài đang soạn chưa lưu' });
+      await newSong.click();
+      await draftDialog.getByRole('button', { name: 'Tiếp tục soạn' }).click();
+      await draftDialog.waitFor({ state: 'hidden' });
       assert.equal(await page.locator('#sheet').inputValue(), previousText);
-      await confirmNew(true);
+      await newSong.click();
+      await page.keyboard.press('Escape');
+      await draftDialog.waitFor({ state: 'hidden' });
+      assert.equal(await page.locator('#sheet').inputValue(), previousText);
+      await newSong.click();
+      await draftDialog.getByRole('button', { name: 'Bắt đầu bài mới' }).click();
       assert.equal(await page.locator('#songTitle').textContent(), 'Bài chưa đặt tên');
       assert.equal(await page.locator('#titleIn').inputValue(), '');
       assert.equal(await page.locator('#inst').inputValue(), 'harp');
       assert.equal(await page.locator('.trk').count(), 1);
       assert.equal(await page.locator('.cell.on').count(), 0);
       assert.equal(await page.locator('#undoRollBtn').isDisabled(), true);
+      const recordHelp = page.locator('#playSurface #recordKeyHint');
+      assert.equal(await recordHelp.isVisible(), !mobile);
+      assert.deepEqual(await recordHelp.locator('kbd').allTextContents(), ['Space', 'Shift']);
+      assert.equal(await page.locator('#playSurface #recordRestBtn').isVisible(), false);
+      assert.equal(await page.locator('#playSurface #recordChordBtn').isVisible(), false);
+      await page.locator('#recBtn').click();
+      assert.equal(await recordHelp.isVisible(), !mobile);
+      await page.locator('.pad[data-i="0"]').click();
+      const chord = page.locator('#playSurface #recordChordBtn');
+      assert.equal(await chord.isVisible(), mobile);
+      if (mobile) {
+        await chord.tap();
+        await page.locator('.pad[data-i="2"]').tap();
+        await page.locator('.pad[data-i="4"]').tap();
+      } else {
+        await page.keyboard.down('Shift');
+        await page.keyboard.press('KeyE');
+        await page.keyboard.press('KeyT');
+      }
+      await page.locator('.hd.recording-step[data-c="1"]').waitFor();
+      await page.locator('.cell.on[data-c="1"][data-r="4"]').waitFor();
+      assert.equal(await page.locator('.cell.on[data-c="1"]').count(), 2);
+      if (mobile) await chord.tap();
+      else await page.keyboard.up('Shift');
+      const rest = page.locator('#playSurface #recordRestBtn');
+      assert.equal(await rest.isVisible(), mobile);
+      if (mobile) {
+        await rest.tap();
+        await rest.evaluate(button => { for (let n = 0; n < 33; n++) button.click(); });
+      } else {
+        await page.keyboard.press('Space');
+        await page.evaluate(() => {
+          for (let n = 0; n < 33; n++) window.dispatchEvent(new KeyboardEvent('keydown', { code: 'Space', key: ' ' }));
+        });
+      }
+      await page.locator('.pad[data-i="1"]').click();
+      const latest = page.locator('.hd.recording-step[data-c="36"]');
+      await latest.waitFor();
+      assert.equal(await latest.evaluate(header => {
+        const roll = header.closest('#rollWrap');
+        const viewport = roll.getBoundingClientRect();
+        const column = header.getBoundingClientRect();
+        return roll.scrollLeft > 0 && column.left >= viewport.left + 68 && column.right <= viewport.right;
+      }), true);
+      if (viewport.width === 390) {
+        await page.locator('#expandPadsBtn').click();
+        await page.locator('#expandedPlay #recordRestBtn').waitFor();
+        await page.locator('#expandedPlay #recordChordBtn').waitFor();
+        await page.locator('#closePadDialog').click();
+      }
+      await page.locator('#recBtn').click();
+      assert.equal(await rest.isVisible(), false);
+      const readNotes = async () => (await page.locator('#sheet').inputValue()).split('\n').filter(line => !line.startsWith('#')).join(' ').split(/\s+/);
+      const notes = ['Q', 'E+T', ...Array(34).fill('-'), 'W'];
+      assert.deepEqual(await readNotes(), notes);
+      const resume = page.getByRole('button', { name: 'Ghi tiếp' });
+      await resume.click();
+      assert.match(await page.locator('#transportState').textContent(), /Bước 38/);
+      await page.locator('.pad[data-i="2"]').click();
+      await page.locator('#recBtn').click();
+      assert.deepEqual(await readNotes(), [...notes, 'E']);
       console.log(`PASS MIDI + layered controls + practice halo + fullscreen ${viewport.width}: pad ${Math.round(metrics.pad[0])}px, native fullscreen=${metrics.full}`);
       await context.close(); assert.deepEqual(errors, []);
     }

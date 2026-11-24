@@ -188,12 +188,43 @@ if (require.main === module) (async () => {
     assert.equal(new Set(calls.map(x => x.track)).size, 3);
     $('playBtn').click(); assert.equal($('playBtn').getAttribute('aria-pressed'), 'false'); assert.equal(w.__interval, null);
   });
-  check('Overdub preserves background and schedules no duplicate notes for the recording layer', () => {
-    change('liveMode', 'active'); $('recBtn').click(); assert.equal($('addTrk').disabled, true);
+  check('Step recording plays the backing at the current step without duplicating the active layer', () => {
+    change('liveMode', 'active'); $('clearBtn').click();
+    assert.equal($('recBtn').textContent, 'Ghi từ đàn');
+    $('recBtn').click(); assert.equal($('addTrk').disabled, true);
     const active = w.__song().tracks[0]; calls.length = 0; key('q');
     assert.equal(calls.filter(x => x.track === active).length, 1);
     assert.ok(calls.some(x => x.track !== active)); assert.equal(active.steps[0][0], 0);
     $('recBtn').click(); assert.equal($('addTrk').disabled, false); assert.equal($('transportState').textContent, 'Sẵn sàng');
+    assert.equal($('recBtn').textContent, 'Ghi tiếp');
+  });
+  check('Each key or rest advances one step; chords and final rests survive export and import', () => {
+    const requestFrame = w.requestAnimationFrame;
+    let render;
+    w.requestAnimationFrame = callback => { render = callback; return 1; };
+    $('recBtn').click();
+    assert.equal($('transportState').textContent, 'Chờ ghi · Bước 2');
+    for (let n = 0; n < 24; n++) key('q');
+    w.dispatchEvent(new w.KeyboardEvent('keydown', { code: 'KeyQ', repeat: true }));
+    w.dispatchEvent(new w.KeyboardEvent('keydown', { code: 'Space', key: ' ' }));
+    $('recordChordBtn').click(); key('e'); key('t'); $('recordChordBtn').click();
+    $('recordRestBtn').click();
+    assert.equal(w.__interval, null);
+    assert.equal(w.document.querySelector('.hd.recording-step'), null);
+    render();
+    w.requestAnimationFrame = requestFrame;
+    assert.equal(w.document.querySelector('.hd.recording-step').dataset.c, '27');
+    $('recBtn').click();
+    assert.match($('sheet').value, /Q - E\+T -\n# track/);
+    $('applyBtn').click();
+    const active = w.__song().tracks[0];
+    assert.deepEqual(JSON.parse(JSON.stringify(active.steps.slice(0, 28))), [...Array.from({ length: 25 }, () => [0]), [], [2, 4], []]);
+    assert.equal(active.restEnd, 27);
+    $('recBtn').click();
+    assert.equal($('transportState').textContent, 'Chờ ghi · Bước 29');
+    key('w'); $('recBtn').click();
+    assert.equal(active.steps[28][0], 1);
+    assert.equal(active.steps[27].length, 0);
   });
   check('Text sheets round-trip across tracks and chords; saving stays compatible', () => {
     $('sheet').value = '# Test phối\n# bpm 125\n# track Piano | piano | oct 0 | vol 80\nQ+E+T - W -\n# track Bass | bass | oct -1 | vol 60\nQ - T -';

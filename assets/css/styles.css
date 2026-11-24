@@ -696,6 +696,27 @@ input[type="checkbox"], input[type="radio"] { accent-color: var(--gold); margin:
 }
 .cell.layer-note:not(.on)::after { opacity: .65; inset-block: 5px; }
 .hd.playing-step { box-shadow: inset 0 -2px var(--sky); }
+.hd.recording-step { box-shadow: inset 0 -3px var(--rec); }
+.record-step-controls { margin-block: 6px; flex-shrink: 0; }
+.record-touch-buttons { display: none; }
+.record-key-hint {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 5px 10px;
+  margin: 6px 0 0;
+  font-size: 11px;
+  flex-shrink: 0;
+}
+.record-key-hint span { display: inline-flex; align-items: center; gap: 4px; }
+.record-key-hint kbd { padding: 1px 4px; border: 1px solid var(--line); border-radius: 4px; background: var(--panel); }
+.record-timing-hint { margin: 4px 0 0; font-size: 11px; }
+@media (any-pointer: coarse) {
+  .record-touch-buttons { display: flex; }
+  .record-touch-buttons .btn { min-height: 38px; flex: 1; }
+  .record-key-hint { display: none; }
+}
+#recordChordBtn[aria-pressed="true"] { background: var(--gold); color: var(--on-accent); }
 .cell.note-target { background: color-mix(in srgb, var(--gold) 35%, transparent); }
 .cell.on { cursor: grab; }
 .sequencer > .hint { margin-top: 8px; font-size: 10px; }

@@ -31,10 +31,15 @@ Nhật ký phục vụ việc bàn giao giữa các phiên và môn học Prompt
 | 021 | 2026-11-22 | Tích hợp bản Piano vào Sky_Sheet trên upgrade2 | Đã xong mã tại máy | [021-tich-hop-ban-piano-vao-upgrade2.md](021-tich-hop-ban-piano-vao-upgrade2.md) |
 | 022 | 2026-11-24 | Bỏ nút Chơi đàn cạnh lưới và sửa tiêu đề bản ghi | Đã xong mã tại máy | [022-tieu-de-ban-ghi-va-nut-choi-dan.md](022-tieu-de-ban-ghi-va-nut-choi-dan.md) |
 | 023 | 2026-11-24 | Thêm nút Soạn nhạc mới | Đã xong mã tại máy | [023-nut-soan-nhac-moi.md](023-nut-soan-nhac-moi.md) |
+| 024 | 2026-11-24 | Ghi từ đàn từng bước, có nút Nghỉ và cuộn theo nốt | Đã xong mã tại máy | [024-ghi-tu-dan-tung-buoc.md](024-ghi-tu-dan-tung-buoc.md) |
+| 025 | 2026-11-24 | Ghi hợp âm với Shift, giảm cập nhật lưới và thêm hộp thoại bản nháp | Đã xong mã tại máy | [025-ghi-shift-va-hop-thoai-ban-nhap.md](025-ghi-shift-va-hop-thoai-ban-nhap.md) |
+| 026 | 2026-11-24 | Space để nghỉ, nút cảm ứng dưới đàn và ghi liên tiếp | Đã xong mã tại máy | [026-phim-tat-va-ghi-nhanh.md](026-phim-tat-va-ghi-nhanh.md) |
+| 027 | 2026-11-24 | Ghi tiếp từ cuối lớp sau khi dừng ghi | Đã xong mã tại máy | [027-ghi-tiep-tu-cuoi-lop.md](027-ghi-tiep-tu-cuoi-lop.md) |
+| 028 | 2026-11-24 | Hiển thị hướng dẫn Space và Shift ngay dưới đàn | Đã xong mã tại máy | [028-hien-thi-phim-tat-ghi-nhac.md](028-hien-thi-phim-tat-ghi-nhac.md) |
 
 Bản ghi 014–020 là lịch sử của workspace thử nghiệm Sky_Sheet_Piano. Các mốc triển khai vào bản chính bắt đầu ở 021.
 
-**Số tiếp theo: 024** — đối chiếu các file/mục lục thực tế trước khi dùng số này.
+**Số tiếp theo: 029** — đối chiếu các file/mục lục thực tế trước khi dùng số này.
 
 ## Quy ước
 

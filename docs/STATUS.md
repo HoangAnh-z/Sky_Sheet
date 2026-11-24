@@ -1,15 +1,17 @@
 # Tiến độ hiện tại — Phòng Nhạc Sky
 
 - Cập nhật: **2026-11-24**, múi giờ `Asia/Saigon`.
-- Bản ghi mới nhất: [023 — Nút Soạn nhạc mới](prompts/023-nut-soan-nhac-moi.md).
+- Bản ghi mới nhất: [028 — Hiển thị phím tắt ghi nhạc](prompts/028-hien-thi-phim-tat-ghi-nhac.md).
 
 ## Đang ở đâu?
 
 **Bản Production đã chạy tại [musicsheet-azure.vercel.app](https://musicsheet-azure.vercel.app/).** Trang chính và API công khai trả 200. URL riêng của deployment trong yêu cầu 008 chuyển sang đăng nhập Vercel.
 
-Nhánh `upgrade2` đã merge vào `main` tại `a127c8f`, theo các ref Git cục bộ. Bản sửa 022 bỏ nút **Chơi đàn** cạnh **Mở rộng lưới** và bỏ tiêu đề kế thừa khi bắt đầu bản nháp ghi từ đàn. Các thay đổi đang ở thư mục làm việc trên `main`. Phiên này chưa xác minh bản deploy Production. Đề xuất chuyển MP3 sang MIDI tạm dừng.
+Nhánh `upgrade2` từng được merge vào `main` tại `a127c8f`. Bản sửa 022 bỏ nút **Chơi đàn** cạnh **Mở rộng lưới** và bỏ tiêu đề kế thừa khi bắt đầu bản nháp ghi từ đàn. Bản sửa 022–023 hiện có trong commit `59661ee` trên `upgrade2`. Phiên này chưa xác minh bản deploy Production. Đề xuất chuyển MP3 sang MIDI tạm dừng.
 
-Khung soạn có nút **Soạn nhạc mới** để mở bài trống một lớp. Trang hỏi trước khi bỏ các thay đổi chưa lưu. Bản sửa 023 đang ở thư mục làm việc trên `main`.
+Khung soạn có nút **Soạn nhạc mới** để mở bài trống một lớp. Trang hỏi trước khi bỏ các thay đổi chưa lưu.
+
+Bản sửa 024–028 đang tại máy trên `upgrade3`. **Ghi từ đàn** nhận từng lần bấm và cuộn tới bước mới. **Ghi tiếp** nối vào cuối lớp đang chọn, kể cả sau bước nghỉ. Máy tính hiện hướng dẫn **Space** để nghỉ và giữ **Shift** để gom nốt ngay dưới bàn đàn. Hai nút **Nghỉ** và **Hợp âm** hiện dưới phím đàn trong lúc ghi trên màn hình cảm ứng. **Soạn nhạc mới** mở bài trống và hỏi trước nếu bản hiện tại có thay đổi chưa lưu.
 
 | Phần | Trạng thái hiện tại |
 |---|---|

@@ -1,13 +1,15 @@
 # Tiến độ hiện tại — Phòng Nhạc Sky
 
-- Cập nhật: **2026-11-22**, múi giờ `Asia/Saigon`.
-- Bản ghi mới nhất: [021 — Tích hợp bản Piano vào upgrade2](prompts/021-tich-hop-ban-piano-vao-upgrade2.md).
+- Cập nhật: **2026-11-24**, múi giờ `Asia/Saigon`.
+- Bản ghi mới nhất: [023 — Nút Soạn nhạc mới](prompts/023-nut-soan-nhac-moi.md).
 
 ## Đang ở đâu?
 
 **Bản Production đã chạy tại [musicsheet-azure.vercel.app](https://musicsheet-azure.vercel.app/).** Trang chính và API công khai trả 200. URL riêng của deployment trong yêu cầu 008 chuyển sang đăng nhập Vercel.
 
-Nhánh `upgrade2` tại máy đã nhận piano roll, tua theo bước, công tắc xem nhiều lớp, phát nền và sáu bộ âm thu thử từ Sky_Sheet_Piano. Đề xuất chuyển MP3 sang MIDI tạm dừng. Tính năng mới chưa triển khai lên Production.
+Nhánh `upgrade2` đã merge vào `main` tại `a127c8f`, theo các ref Git cục bộ. Bản sửa 022 bỏ nút **Chơi đàn** cạnh **Mở rộng lưới** và bỏ tiêu đề kế thừa khi bắt đầu bản nháp ghi từ đàn. Các thay đổi đang ở thư mục làm việc trên `main`. Phiên này chưa xác minh bản deploy Production. Đề xuất chuyển MP3 sang MIDI tạm dừng.
+
+Khung soạn có nút **Soạn nhạc mới** để mở bài trống một lớp. Trang hỏi trước khi bỏ các thay đổi chưa lưu. Bản sửa 023 đang ở thư mục làm việc trên `main`.
 
 | Phần | Trạng thái hiện tại |
 |---|---|

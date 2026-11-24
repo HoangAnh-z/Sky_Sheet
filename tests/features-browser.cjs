@@ -266,7 +266,7 @@ async function register(page, name) {
           Object.defineProperty(document.documentElement, name, { value: undefined });
         }
       });
-      await page.locator('#openPadsFromRoll').click();
+      await page.locator('#expandPadsBtn').click();
       await page.waitForFunction(() => document.querySelector('#padDialog').open);
       await page.waitForTimeout(250);
       const assertLayout = async () => {
@@ -307,6 +307,27 @@ async function register(page, name) {
       assert.equal(await page.locator('#guideBtn').getAttribute('aria-pressed'), 'true');
       await page.locator('#guideBtn').click();
       assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
+      const newSong = page.getByRole('button', { name: 'Soạn nhạc mới' });
+      const previousText = await page.locator('#sheet').inputValue();
+      const confirmNew = async accept => {
+        const dialog = page.waitForEvent('dialog');
+        const click = newSong.click();
+        const prompt = await dialog;
+        const message = prompt.message();
+        if (accept) await prompt.accept();
+        else await prompt.dismiss();
+        await click;
+        assert.match(message, /thay đổi chưa lưu/);
+      };
+      await confirmNew(false);
+      assert.equal(await page.locator('#sheet').inputValue(), previousText);
+      await confirmNew(true);
+      assert.equal(await page.locator('#songTitle').textContent(), 'Bài chưa đặt tên');
+      assert.equal(await page.locator('#titleIn').inputValue(), '');
+      assert.equal(await page.locator('#inst').inputValue(), 'harp');
+      assert.equal(await page.locator('.trk').count(), 1);
+      assert.equal(await page.locator('.cell.on').count(), 0);
+      assert.equal(await page.locator('#undoRollBtn').isDisabled(), true);
       console.log(`PASS MIDI + layered controls + practice halo + fullscreen ${viewport.width}: pad ${Math.round(metrics.pad[0])}px, native fullscreen=${metrics.full}`);
       await context.close(); assert.deepEqual(errors, []);
     }

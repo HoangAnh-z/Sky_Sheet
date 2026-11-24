@@ -21,9 +21,10 @@
   var ctx = null;
   var playing = false, timerId = null, raf = 0, nextT = 0, stepI = 0, queue = [], finishAt = 0;
   var shownStep = null, paintedStep = null;
-  var rec = false, recArmed = false, recT0 = 0, recTimer = null;
+  var rec = false, recArmed = false, recT0 = 0, recTimer = null, recordingDraft = false;
   var practice = null, practiceColumn = -1;
   var communityUI = null, previewPlayer = null, editingSongId = null;
+  var songBaseline = '';
   var columns = new Map(), padEls = [], rlEls = [];
   var rollHistory = new WeakMap();
   var resetRollScroll = false;
@@ -279,7 +280,6 @@
       this.setAttribute('aria-pressed', String(wide));
       this.textContent = wide ? 'Thu hẹp lưới' : 'Mở rộng lưới';
     });
-    $('#openPadsFromRoll').addEventListener('click', openExpandedPads);
     roll.addEventListener('pointerdown', function (event) {
       skipClick = false;
       var cell = event.target.closest('.cell');
@@ -513,15 +513,21 @@
     updatePlayBtn(); lockTrackEditing(); toast('Bấm một phím để bắt đầu ghi');
   }
   function stopRec() {
+    var recorded = !recArmed;
     rec = false; recArmed = false; clearInterval(recTimer); recTimer = null; if (playing) stopPlay();
     $('#recBtn').classList.remove('on'); $('#recBtn').textContent = 'Ghi từ đàn';
-    var n = lastUsed() + 1;
-    updatePlayBtn(); lockTrackEditing(); syncText(true);
-    toast(n > 0 ? 'Đã ghi ' + n + ' bước' : 'Chưa ghi được nốt nào');
+    updatePlayBtn(); lockTrackEditing();
+    if (recorded) syncText(true);
+    toast(recorded ? 'Đã ghi ' + (lastUsed() + 1) + ' bước' : 'Chưa ghi được nốt nào');
   }
   function recordNote(i) {
     if (recArmed) {
       recArmed = false; recT0 = performance.now();
+      if (!recordingDraft || editingSongId) {
+        recordingDraft = true;
+        editingSongId = null;
+        setSongTitle('');
+      }
       song.tracks[activeT].steps = song.steps = normSteps([], song.steps.length); setCursor(0); buildRoll();
       if ($('#ovd').checked && lastBacking() >= 0) { playing = true; cuePlayback(0, 0.02); refreshPlaybackTimer(); raf = requestAnimationFrame(frame); updatePlayBtn(); }
       $('#recBtn').textContent = 'Đang ghi… bấm để dừng'; updatePlayBtn();
@@ -601,6 +607,11 @@
   }
 
   /* ---------- bản nhạc dạng chữ ---------- */
+  function setSongTitle(title) {
+    song.title = title;
+    $('#titleIn').value = title;
+    $('#songTitle').textContent = title || 'Bài chưa đặt tên';
+  }
   function tok(a) { return a.length ? a.map(function (i) { return LETTERS[i]; }).join('+') : '-'; }
   function toText() {
     var out = ['# title ' + (song.title || 'Bài chưa đặt tên'), '# bpm ' + song.bpm], t0 = song.tracks[0];
@@ -663,30 +674,39 @@
     var r = parse($('#sheet').value, song.tracks[activeT].inst);
     if (!r.count) { toast('Chưa đọc được nốt nào trong ô bản nhạc'); return; }
     if (r.bpm) r.bpm = Math.min(220, Math.max(50, r.bpm));
-    loadSong(r.title || song.title, r.bpm || song.bpm, r.tracks, editingSongId); switchTab('compose');
+    loadSong(r.title || song.title, r.bpm || song.bpm, r.tracks, editingSongId, true); switchTab('compose');
     toast(r.bad.length ? 'Đã áp dụng. Bỏ qua ' + r.bad.length + ' ký tự lạ: ' + r.bad.slice(0, 3).join(' ') : 'Đã áp dụng ' + r.count + ' bước, ' + r.tracks.length + ' lớp');
   }
   function setBpm(v, skipSync) {
     song.bpm = v; $('#bpmRange').value = v; $('#bpmNum').value = v;
     if (!skipSync) syncText();
   }
-  function loadSong(title, bpm, tracks, savedId) {
+  function loadSong(title, bpm, tracks, savedId, keepBaseline) {
     editingSongId = savedId || null;
     if (previewPlayer) previewPlayer.stop();
     stopPractice();
     if (rec) stopRec();
+    recordingDraft = false;
     if (playing) stopPlay();
     audio.stopAll();
     song.tracks.forEach(function (tr) { if (tr.bus) tr.bus.disconnect(); });
     var m = 0; tracks.forEach(function (t) { m = Math.max(m, t.steps.length); });
     tracks.forEach(function (t) { t.steps = normSteps(t.steps, Math.max(32, Math.ceil(m / 8) * 8)); });
     song = { title: title, bpm: bpm, tracks: tracks, steps: tracks[0].steps }; activeT = 0;
-    $('#songTitle').textContent = title || 'Bài chưa đặt tên';
-    $('#titleIn').value = title; $('#inst').value = tracks[0].inst; setBpm(bpm, true); setCursor(0);
+    setSongTitle(title); $('#inst').value = tracks[0].inst; setBpm(bpm, true); setCursor(0);
     renderTracks(); buildRoll(); syncText(true);
+    if (!keepBaseline) songBaseline = $('#sheet').value;
     resetRollScroll = $('#view-compose').hidden;
     if (!resetRollScroll) $('#rollWrap').scrollLeft = 0;
     updateRollWindow();
+  }
+  function newSong() {
+    if (rec) return;
+    var currentText = toText();
+    var unsaved = currentText !== songBaseline || $('#sheet').value !== currentText || $('#titleIn').value.trim() !== song.title;
+    if (unsaved && !window.confirm('Bài đang soạn có thay đổi chưa lưu. Bắt đầu bài mới và bỏ các thay đổi này?')) return;
+    loadSong('', 100, [mkTrack('Lớp 1', 'harp')]);
+    toast('Đã mở bản nhạc mới');
   }
 
   /* ---------- thư viện ---------- */
@@ -750,19 +770,28 @@
   }
   async function saveSong() {
     if (lastAll() < 0) { toast('Chưa có nốt nào để lưu'); return; }
-    song.title = ($('#titleIn').value || '').trim() || 'Bài chưa đặt tên';
-    $('#titleIn').value = song.title; $('#songTitle').textContent = song.title; syncText(true);
+    setSongTitle($('#titleIn').value.trim() || 'Bài chưa đặt tên'); syncText(true);
     var value = { title: song.title, bpm: song.bpm, text: toText() };
     if (cloudState.user) {
-      var uid = cloudState.user.uid;
+      var uid = cloudState.user.uid, savedSong = song;
       if (editingSongId) value.id = editingSongId;
-      try { var saved = await cloud.save(value); if (cloudState.user && cloudState.user.uid === uid) { if (saved) editingSongId = saved.id; toast('Đã lưu "' + value.title + '" vào tài khoản'); } }
+      try {
+        var saved = await cloud.save(value);
+        if (cloudState.user && cloudState.user.uid === uid) {
+          if (saved && song === savedSong) { editingSongId = saved.id; songBaseline = value.text; }
+          toast('Đã lưu "' + value.title + '" vào tài khoản');
+        }
+      }
       catch (error) { toast(window.SkyCloud.errorMessage(error)); }
       return;
     }
     var list = readUser().filter(function (s) { return s.title !== song.title; });
     list.push(value);
-    toast(writeUser(list) ? 'Đã lưu "' + song.title + '" trong trình duyệt này' : 'Trình duyệt không cho lưu. Hãy sao chép bản nhạc để giữ lại');
+    if (writeUser(list)) {
+      recordingDraft = false;
+      songBaseline = value.text;
+      toast('Đã lưu "' + song.title + '" trong trình duyệt này');
+    } else toast('Trình duyệt không cho lưu. Hãy sao chép bản nhạc để giữ lại');
     renderLibrary();
   }
 
@@ -824,7 +853,7 @@
     $('#tracks').querySelectorAll('.live-check').forEach(function (label) { label.hidden = !layered; });
   }
   function lockTrackEditing() {
-    document.querySelectorAll('#tracks input, #tracks select, #tracks button, #inst, #addTrk, #clearBtn, #bpmNum, #bpmRange, #applyBtn').forEach(function (el) { el.disabled = rec; });
+    document.querySelectorAll('#tracks input, #tracks select, #tracks button, #inst, #addTrk, #clearBtn, #bpmNum, #bpmRange, #applyBtn, #newSongBtn').forEach(function (el) { el.disabled = rec; });
     $('#inst').disabled = rec || $('#liveMode').value === 'layered';
     $('#rollJump').querySelectorAll('input, button').forEach(function (element) { element.disabled = rec; });
     $('#tracks').querySelectorAll('.octave').forEach(function (select, i) {
@@ -907,7 +936,6 @@
     });
     cloud.start();
   }
-  var openExpandedPads;
   function initExpandedPads() {
     var dialog = $('#padDialog'), transport = $('.transport'), surface = $('#playSurface'), toastElement = $('#toast');
     var transportAnchor = null, surfaceAnchor = null, toastAnchor = null, openTrigger = null;
@@ -949,7 +977,7 @@
       if (practiceColumn >= 0) scrollToColumn(practiceColumn);
     }
     function close() { if (dialog.open) dialog.close(); restore(); }
-    openExpandedPads = function () {
+    function openExpandedPads() {
       if (dialog.open) return;
       openTrigger = this;
       if (typeof dialog.showModal !== 'function') { toast('Trình duyệt này chưa hỗ trợ vùng đàn phóng to. Hãy dùng trình duyệt mới hơn.'); return; }
@@ -965,7 +993,7 @@
         $('#closePadDialog').focus({ preventScroll: true });
         requestFullscreen();
       } catch (_) { restore(); toast('Không mở được vùng đàn phóng to. Bạn vẫn có thể chơi ở vùng đàn thường.'); }
-    };
+    }
     $('#expandPadsBtn').addEventListener('click', openExpandedPads);
     $('#closePadDialog').addEventListener('click', close);
     dialog.addEventListener('cancel', function (event) { event.preventDefault(); close(); });
@@ -1092,6 +1120,7 @@
   /* ---------- nối sự kiện ---------- */
   function init() {
     buildPads();
+    $('#newSongBtn').addEventListener('click', newSong);
     Object.keys(INSTS).forEach(function (id) { opt($('#inst'), id, INSTS[id].n); });
     $('#inst').addEventListener('change', function () { song.tracks[activeT].inst = this.value; renderTracks(); syncText(); });
     $('#addTrk').addEventListener('click', function () {
@@ -1109,7 +1138,7 @@
       if (playing) stopPlay();
       song.tracks[activeT].steps = song.steps = normSteps([], song.steps.length); setCursor(0); buildRoll(); syncText(true); toast('Đã xóa lớp này');
     });
-    $('#titleIn').addEventListener('change', function () { song.title = this.value.trim(); $('#songTitle').textContent = song.title || 'Bài chưa đặt tên'; syncText(true); });
+    $('#titleIn').addEventListener('change', function () { setSongTitle(this.value.trim()); syncText(true); });
     $('#applyBtn').addEventListener('click', applyText);
     $('#copyBtn').addEventListener('click', function () { copyText($('#sheet').value, $('#sheet')); });
     $('#saveBtn').addEventListener('click', saveSong);

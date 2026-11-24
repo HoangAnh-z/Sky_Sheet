@@ -37,6 +37,18 @@
         <div class="section-heading instrument-heading"><h2>Chơi đàn</h2><div class="row instrument-actions"><button class="btn small" id="padColorBtn" type="button" aria-haspopup="dialog" aria-controls="padColorDialog">🎨 Màu sắc</button><button class="btn small" id="expandPadsBtn" type="button" aria-haspopup="dialog" aria-controls="padDialog" aria-expanded="false">⛶ Phóng to</button></div></div>
         <div class="play-surface" id="playSurface">
         <div class="pad-area"><div class="pads" id="pads"></div></div>
+        <p class="record-key-hint" id="recordKeyHint">
+          <strong>Khi ghi</strong>
+          <span><kbd>Space</kbd> Nghỉ</span>
+          <span>Giữ <kbd>Shift</kbd> để ghi hợp âm</span>
+        </p>
+        <div class="record-step-controls" id="recordStepControls" hidden>
+          <div class="row record-touch-buttons">
+            <button class="btn small" id="recordRestBtn" type="button" title="Chèn một bước trống">Nghỉ</button>
+            <button class="btn small" id="recordChordBtn" type="button" aria-pressed="false" title="Bật để gom nốt vào một bước, tắt để chốt hợp âm">Hợp âm</button>
+          </div>
+          <p class="hint record-timing-hint">Có thể bấm liền. Thả rồi bấm lại khi lặp cùng phím.</p>
+        </div>
         <p class="guide-status" id="guideStatus" role="status" aria-live="polite" hidden></p>
         <button class="btn keyboard-toggle" id="keyboardBtn" type="button" aria-pressed="false" aria-describedby="keyboardStatus">Bật chơi bằng bàn phím</button>
         <p class="hint keyboard-status" id="keyboardStatus" role="status">Bàn phím đang tắt · vẫn có thể bấm trực tiếp lên đàn.</p>
@@ -49,7 +61,7 @@
           <p class="hint field wide" id="layeredHint" hidden>Đang chơi nhiều lớp: chỉnh âm sắc từng lớp trong Dàn nhạc. Tên phím vẫn áp dụng cho cả đàn.</p>
           <div class="field wide"><label class="cap" for="bpmRange">Tốc độ · BPM</label><div class="bpm-line"><input type="range" id="bpmRange" min="50" max="220" value="100"><input type="number" id="bpmNum" min="50" max="220" value="100" aria-label="BPM"></div></div>
         </div>
-        <details class="record-options"><summary>Tùy chọn ghi & cách chơi nhiều lớp</summary><div class="stack"><label class="check"><input type="checkbox" id="metro" checked> Nhịp khi ghi</label><label class="check"><input type="checkbox" id="ovd" checked> Phát các lớp khác khi ghi</label><p class="hint">Chồng lớp: một phím phát cùng nốt trên nhiều nhạc cụ. Chơi cùng nền: bấm Phát rồi tự đàn lớp đang chọn. Ghi đè: chọn lớp, bấm Ghi; lớp đó được thay từ phím đầu tiên, các lớp khác làm nền. Bản ghi luôn lưu vào lớp đang chọn.</p></div></details>
+        <details class="record-options"><summary>Tùy chọn ghi & cách chơi nhiều lớp</summary><div class="stack"><label class="check"><input type="checkbox" id="metro" checked> Tiếng nhịp khi nhập bước</label><label class="check"><input type="checkbox" id="ovd" checked> Nghe các lớp khác ở bước đang ghi</label><p class="hint">Ghi tiếp nối sau bước cuối của lớp đang chọn. Dùng Soạn nhạc mới để bắt đầu bài trống. BPM đặt tốc độ khi phát lại.</p></div></details>
       </aside>
 
       <section class="desk panel" aria-label="Không gian soạn nhạc">
@@ -63,7 +75,7 @@
 
         <div class="tab-view compose-view" id="view-compose" role="tabpanel" aria-labelledby="tab-compose">
           <section class="sequencer" aria-label="Khung soạn nhạc">
-            <div class="section-heading"><h2>Khung soạn nhạc</h2><div class="row"><button class="btn primary small" id="newSongBtn" type="button">Soạn nhạc mới</button><button class="btn small" id="rollFocusBtn" type="button" aria-pressed="false">Mở rộng lưới</button></div></div>
+            <div class="section-heading"><h2>Khung soạn nhạc</h2><div class="row"><button class="btn primary small" id="newSongBtn" type="button" aria-haspopup="dialog" aria-controls="newSongDialog">Soạn nhạc mới</button><button class="btn small" id="rollFocusBtn" type="button" aria-pressed="false">Mở rộng lưới</button></div></div>
             <div class="roll-tools row" aria-label="Công cụ soạn nhạc">
               <button class="btn small" id="rollEditBtn" type="button" aria-pressed="false">Sửa nốt</button>
               <button class="btn small" id="undoRollBtn" type="button" disabled>Hoàn tác</button>
@@ -121,6 +133,17 @@
     </main>
     <footer class="footer"><span>15 phím · tối đa 8 lớp nhạc cụ</span><span id="liveStatus">Đang chơi lớp đang chọn</span></footer>
   </div>
+  <dialog class="account-dialog" id="newSongDialog" aria-labelledby="newSongDialogTitle" aria-describedby="newSongDialogMessage">
+    <div class="stack">
+      <h2 id="newSongDialogTitle">Bài đang soạn chưa lưu</h2>
+      <p id="newSongDialogMessage">Bắt đầu bài mới sẽ bỏ các thay đổi chưa lưu của bài hiện tại.</p>
+      <div class="row">
+        <button class="btn small" id="cancelNewSongBtn" type="button" autofocus>Tiếp tục soạn</button>
+        <button class="btn primary small" id="confirmNewSongBtn" type="button">Bắt đầu bài mới</button>
+      </div>
+    </div>
+  </dialog>
+
   <dialog class="account-dialog" id="accountDialog" aria-labelledby="accountDialogTitle" aria-describedby="accountIntro">
     <div class="section-heading"><h2 id="accountDialogTitle">Đăng nhập</h2><button class="btn small" id="closeAccountBtn" type="button" aria-label="Đóng tài khoản">✕ Đóng</button></div>
     <p class="hint" id="accountIntro">Giữ thư viện bài nhạc của riêng bạn, mở lại trên mọi thiết bị.</p>

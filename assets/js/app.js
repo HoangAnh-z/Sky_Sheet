@@ -20,7 +20,8 @@
   var labelMode = 'key', cursor = 0, keyboardEnabled = false;
   var ctx = null;
   var playing = false, timerId = null, raf = 0, nextT = 0, stepI = 0, queue = [], finishAt = 0;
-  var shownStep = null, paintedStep = null;
+  var shownStep = null, paintedStep = null, pausedStep = null;
+  var displayedStep = 0, stepDraft = false;
   var rec = false, recArmed = false, recordingDraft = false;
   var recordStep = 0, recordedColumn = -1, recordChord = false, recordShift = false;
   var recordFrame = null, paintedRecordColumn = -1;
@@ -178,6 +179,7 @@
     if (!column || !notes) return;
     column.firstElementChild.classList.toggle('start', c === cursor);
     column.firstElementChild.classList.toggle('playing-step', paintedStep && paintedStep.column === c);
+    column.firstElementChild.classList.toggle('paused-step', pausedStep === c);
     column.firstElementChild.classList.toggle('recording-step', rec && recordedColumn === c);
     column.classList.toggle('practicing', c === practiceColumn);
     var layers = Array.from({ length: 15 }, function () { return []; });
@@ -241,11 +243,16 @@
     updateUndo(); syncText();
   }
   function setCursor(c) {
+    setPausedStep(null);
     stopPractice();
     var previous = cursor;
     cursor = c;
-    $('#rollStep').value = c + 1;
+    stepDraft = false; showRollStep(c);
     paintRollStep(previous); paintRollStep(c);
+  }
+  function showRollStep(c) {
+    displayedStep = c;
+    if (!stepDraft) $('#rollStep').value = c + 1;
   }
   function jumpToStep(c) {
     if (rec) return;
@@ -263,13 +270,27 @@
   }
   function bindRoll() {
     var roll = $('#roll'), wrap = $('#rollWrap');
+    var stepField = $('#rollStep'), jumpForm = $('#rollJump');
     wrap.addEventListener('scroll', updateRollWindow, { passive: true });
     if (typeof ResizeObserver !== 'undefined') new ResizeObserver(updateRollWindow).observe(wrap);
     $('#undoRollBtn').addEventListener('click', undoRoll);
-    $('#rollJump').addEventListener('submit', function (event) {
+    stepField.addEventListener('input', function () { stepDraft = true; });
+    $('#prevRollStep').addEventListener('click', function () { stepDraft = true; stepField.stepDown(); });
+    $('#nextRollStep').addEventListener('click', function () { stepDraft = true; stepField.stepUp(); });
+    function discardStepDraft() {
+      if (!stepDraft) return;
+      stepDraft = false; showRollStep(displayedStep);
+    }
+    jumpForm.addEventListener('focusout', function (event) {
+      if (event.relatedTarget && !jumpForm.contains(event.relatedTarget)) discardStepDraft();
+    });
+    jumpForm.addEventListener('keydown', function (event) { if (event.key === 'Escape') discardStepDraft(); });
+    document.addEventListener('pointerdown', function (event) {
+      if (!jumpForm.contains(event.target)) discardStepDraft();
+    });
+    jumpForm.addEventListener('submit', function (event) {
       event.preventDefault();
-      var step = $('#rollStep');
-      if (step.checkValidity()) jumpToStep(step.valueAsNumber - 1);
+      if (stepField.checkValidity()) jumpToStep(stepField.valueAsNumber - 1);
     });
     $('#rollAllTracks').addEventListener('change', function () {
       showAllTracks = this.checked;
@@ -350,6 +371,13 @@
     paintedStep = null;
     rlEls.forEach(function (el) { el.classList.remove('active-hit'); });
   }
+  function setPausedStep(c) {
+    var previous = columns.get(pausedStep);
+    if (previous) previous.firstElementChild.classList.remove('paused-step');
+    pausedStep = c;
+    var current = columns.get(c);
+    if (current) current.firstElementChild.classList.add('paused-step');
+  }
 
   /* ---------- tập theo đèn: chờ người chơi, không tự phát ---------- */
   function clearPracticeLights() {
@@ -411,10 +439,12 @@
   var ICON_PLAY = '<svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M3 1.5v11l9-5.5z" fill="currentColor"/></svg>';
   var ICON_STOP = '<svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><rect x="2.5" y="2.5" width="9" height="9" rx="1.5" fill="currentColor"/></svg>';
   function updatePlayBtn() {
-    $('#playBtn').innerHTML = (playing ? ICON_STOP + 'Dừng' : ICON_PLAY + 'Phát');
+    $('#playBtn').innerHTML = (playing ? ICON_STOP + 'Dừng' : ICON_PLAY + (pausedStep === null ? 'Phát' : 'Phát tiếp'));
     $('#playBtn').setAttribute('aria-pressed', playing);
-    $('#transportState').textContent = rec ? (recArmed ? 'Chờ ghi · Bước ' + (recordStep + 1) : 'Đã ghi bước ' + (recordedColumn + 1))
-      : playing ? 'Đang phát' : practice ? 'Đang tập' : 'Sẵn sàng';
+    var status = $('#transportState');
+    status.dataset.state = rec ? 'recording' : playing ? 'playing' : practice ? 'practice' : pausedStep === null ? 'ready' : 'paused';
+    status.textContent = rec ? (recArmed ? 'Chờ ghi · Bước ' + (recordStep + 1) : 'Đã ghi bước ' + (recordedColumn + 1))
+      : playing ? 'Đang phát' : practice ? 'Đang tập' : pausedStep === null ? 'Sẵn sàng' : 'Tạm dừng · Bước ' + (pausedStep + 1);
   }
   function sched() {
     var now = ctx.currentTime;
@@ -466,6 +496,7 @@
       paintedStep = shownStep;
       var current = columns.get(shownStep.column);
       if (current) current.firstElementChild.classList.add('playing-step');
+      showRollStep(shownStep.column);
       setPlayhead(shownStep);
     }
     raf = requestAnimationFrame(frame);
@@ -501,13 +532,26 @@
     if (rec) stopRec();
     ensureAudio();
     if (lastAll() < 0) { toast('Chưa có nốt nào để phát'); return; }
-    playing = true; cuePlayback(Math.min(cursor, songEnd()), 0.06);
+    var from = Math.min(pausedStep === null ? cursor : pausedStep, songEnd());
+    setPausedStep(null);
+    playing = true; cuePlayback(from, 0.06);
+    showRollStep(from);
     refreshPlaybackTimer();
     raf = requestAnimationFrame(frame); updatePlayBtn();
   }
-  function stopPlay(keepTail) {
+  function pausePlayback() {
+    advanceTimeline(ctx.currentTime);
+    var step = shownStep || queue[0];
+    stopPlay(false, step ? step.column : displayedStep);
+  }
+  function stopPlay(keepTail, pauseAt) {
     playing = false; clearInterval(timerId); timerId = null; cancelAnimationFrame(raf);
-    queue = []; shownStep = null; finishAt = 0; clearPlayhead(); if (!keepTail) audio.stopAll(); updatePlayBtn();
+    queue = []; shownStep = null; finishAt = 0; clearPlayhead();
+    setPausedStep(pauseAt === undefined ? null : pauseAt);
+    showRollStep(pausedStep === null ? cursor : pausedStep);
+    if (pausedStep !== null && scrollToColumn(pausedStep)) updateRollWindow();
+    if (!keepTail) audio.stopAll();
+    updatePlayBtn();
   }
 
   /* ---------- ghi ---------- */
@@ -892,6 +936,7 @@
     if (name === 'compose') {
       if (resetRollScroll) { $('#rollWrap').scrollLeft = 0; resetRollScroll = false; }
       if (rec && recordedColumn >= 0) scrollToColumn(recordedColumn);
+      else if (pausedStep !== null) scrollToColumn(pausedStep);
       updateRollWindow();
     }
     if (name === 'community' && communityUI) communityUI.open();
@@ -1191,7 +1236,7 @@
     $('#labelMode').addEventListener('change', function () { labelMode = this.value; refreshLabels(); });
     $('#bpmRange').addEventListener('input', function () { setBpm(+this.value); });
     $('#bpmNum').addEventListener('change', function () { setBpm(Math.min(220, Math.max(50, +this.value || 100))); });
-    $('#playBtn').addEventListener('click', function () { if (rec) stopRec(); else if (playing) stopPlay(); else startPlay(); });
+    $('#playBtn').addEventListener('click', function () { if (rec) stopRec(); else if (playing) pausePlayback(); else startPlay(); });
     $('#recBtn').addEventListener('click', toggleRec);
     $('#recordRestBtn').addEventListener('click', function () { recordInput(null); });
     $('#recordChordBtn').addEventListener('click', function () {
@@ -1215,7 +1260,8 @@
     window.addEventListener('keydown', function (e) {
       if (!keyboardEnabled || e.defaultPrevented || $('#accountDialog').open || $('#publishDialog').open || $('#padColorDialog').open || $('#newSongDialog').open || isEditing(e.target)) return;
       if (e.ctrlKey || e.metaKey || e.altKey) return;
-      if (rec && (e.code === 'Space' || e.key === ' ')) {
+      var onSwitch = e.target.matches && e.target.matches('[role="switch"]');
+      if (rec && !onSwitch && (e.code === 'Space' || e.key === ' ')) {
         e.preventDefault();
         if (!e.repeat) recordInput(null);
         return;

@@ -36,10 +36,12 @@ Nhật ký phục vụ việc bàn giao giữa các phiên và môn học Prompt
 | 026 | 2026-11-24 | Space để nghỉ, nút cảm ứng dưới đàn và ghi liên tiếp | Đã xong mã tại máy | [026-phim-tat-va-ghi-nhanh.md](026-phim-tat-va-ghi-nhanh.md) |
 | 027 | 2026-11-24 | Ghi tiếp từ cuối lớp sau khi dừng ghi | Đã xong mã tại máy | [027-ghi-tiep-tu-cuoi-lop.md](027-ghi-tiep-tu-cuoi-lop.md) |
 | 028 | 2026-11-24 | Hiển thị hướng dẫn Space và Shift ngay dưới đàn | Đã xong mã tại máy | [028-hien-thi-phim-tat-ghi-nhac.md](028-hien-thi-phim-tat-ghi-nhac.md) |
+| 029 | 2026-11-24 | Hiển thị bước hiện tại, chỉnh bước và phát tiếp | Đã xong mã tại máy | [029-buoc-hien-tai-va-phat-tiep.md](029-buoc-hien-tai-va-phat-tiep.md) |
+| 030 | 2026-11-24 | Làm nổi bật ô trạng thái và đổi Lặp thành công tắc | Đã xong mã tại máy | [030-trang-thai-va-cong-tac-lap.md](030-trang-thai-va-cong-tac-lap.md) |
 
 Bản ghi 014–020 là lịch sử của workspace thử nghiệm Sky_Sheet_Piano. Các mốc triển khai vào bản chính bắt đầu ở 021.
 
-**Số tiếp theo: 029** — đối chiếu các file/mục lục thực tế trước khi dùng số này.
+**Số tiếp theo: 031** — đối chiếu các file/mục lục thực tế trước khi dùng số này.
 
 ## Quy ước
 

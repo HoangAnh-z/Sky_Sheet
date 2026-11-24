@@ -210,7 +210,25 @@ p { margin: 0; }
 .now-playing { display: grid; flex: 1; min-width: 0; gap: 3px; }
 .now-playing strong { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 14px; font-weight: 650; }
 .cap { font-size: 10px; color: var(--muted); font-weight: 600; letter-spacing: .6px; text-transform: uppercase; }
-.transport-state { color: var(--muted); min-width: 72px; font-size: 11px; }
+.transport-meta { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.transport-state {
+  --state-color: var(--gold);
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 8px;
+  border: 1px solid var(--state-color);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--state-color) 12%, var(--well));
+  color: var(--fg);
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.transport-state::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--state-color); }
+.transport-state[data-state="playing"], .transport-state[data-state="practice"] { --state-color: var(--sky); }
+.transport-state[data-state="recording"] { --state-color: var(--rec); }
+.transport-state[data-state="paused"] { --state-color: var(--hit); }
 .row { flex-wrap: wrap; gap: 8px; }
 
 /* Liquid Glass Buttons & iPhone-style Hover Effects */
@@ -577,10 +595,22 @@ input[type="checkbox"], input[type="radio"] { accent-color: var(--gold); margin:
   grid-template-rows: 23px repeat(15, minmax(var(--cell-h), 1fr));
 }
 .roll-tools { margin-bottom: 8px; }
-.roll-jump { gap: 5px; flex-wrap: nowrap; font-size: 11px; }
-.roll-jump input { width: 7ch; padding: 4px 6px; font: 11px var(--mono); }
-.roll-switch { display: inline-flex; align-items: center; gap: 7px; min-height: 30px; cursor: pointer; font-size: 11px; }
-.roll-switch input {
+.roll-jump {
+  gap: 4px;
+  flex-wrap: nowrap;
+  padding: 4px 6px;
+  border: 1px solid var(--gold);
+  border-radius: 10px;
+  background: var(--well);
+  font-size: 11px;
+}
+.roll-jump label { white-space: nowrap; font-weight: 700; }
+.roll-jump input { width: 6.5ch; padding: 4px; text-align: center; font: 700 12px var(--mono); appearance: textfield; }
+.roll-jump input::-webkit-inner-spin-button,
+.roll-jump input::-webkit-outer-spin-button { appearance: none; margin: 0; }
+.roll-jump .roll-step-arrow { min-width: 25px; padding-inline: 4px; font-size: 15px; line-height: 1; }
+.toggle-switch { display: inline-flex; align-items: center; gap: 7px; min-height: 30px; cursor: pointer; font-size: 11px; }
+.toggle-switch input {
   appearance: none;
   width: 32px;
   height: 18px;
@@ -589,12 +619,12 @@ input[type="checkbox"], input[type="radio"] { accent-color: var(--gold); margin:
   background: radial-gradient(circle at 8px center, var(--muted) 4px, transparent 5px), var(--well);
   cursor: inherit;
 }
-.roll-switch input:checked {
+.toggle-switch input:checked {
   border-color: var(--gold);
   background: radial-gradient(circle at calc(100% - 8px) center, var(--on-accent) 4px, transparent 5px), var(--gold);
 }
 @media (forced-colors: active) {
-  .roll-switch input { appearance: auto; width: 18px; }
+  .toggle-switch input { appearance: auto; width: 18px; }
 }
 .roll-wrap.touch-edit .cell { touch-action: none; }
 #rollEditBtn[aria-pressed="true"], #rollFocusBtn[aria-pressed="true"] {
@@ -695,7 +725,7 @@ input[type="checkbox"], input[type="radio"] { accent-color: var(--gold); margin:
   border-radius: 4px;
 }
 .cell.layer-note:not(.on)::after { opacity: .65; inset-block: 5px; }
-.hd.playing-step { box-shadow: inset 0 -2px var(--sky); }
+.hd.playing-step, .hd.paused-step { box-shadow: inset 0 0 0 2px var(--sky); }
 .hd.recording-step { box-shadow: inset 0 -3px var(--rec); }
 .record-step-controls { margin-block: 6px; flex-shrink: 0; }
 .record-touch-buttons { display: none; }
@@ -1081,7 +1111,7 @@ dialog::backdrop {
   .header-actions { margin-left: auto; gap: 6px; }
   h1 { font-size: 19px; }
   .brand-mark { width: 34px; height: 34px; font-size: 24px; }
-  .local-badge, .transport-state { display: none; }
+  .local-badge { display: none; }
   .header-actions .btn { font-size: 11px; padding: 6px 9px; }
   .transport {
     position: sticky;
@@ -1092,8 +1122,8 @@ dialog::backdrop {
     padding: 10px 12px;
     box-shadow: 0 6px 24px rgba(0, 0, 0, 0.15);
   }
-  .now-playing { flex-basis: 100%; }
-  .transport-buttons { flex: 1; }
+  .now-playing { flex-basis: 0; }
+  .transport-buttons { flex: 1 0 100%; order: 1; }
   .transport-buttons .btn { flex: 1; }
   .workspace { grid-template-columns: minmax(0, 1fr); gap: 10px; }
   .instrument { padding: 14px; overflow: visible; }
@@ -1149,10 +1179,13 @@ html.pads-expanded .studio { visibility: hidden; }
 .expanded-heading h2 { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .expanded-heading .btn { flex-shrink: 0; min-height: 38px; }
 .pad-dialog .transport { position: static; flex-wrap: nowrap; gap: 10px; min-height: 0; padding: 8px; box-shadow: none; }
-.pad-dialog .now-playing, .pad-dialog .transport-state { display: none; }
-.pad-dialog .transport-buttons { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); flex: 1; min-width: 0; }
+.pad-dialog .now-playing { display: none; }
+.pad-dialog .transport-buttons { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); flex: 1; min-width: 0; order: 0; }
 .pad-dialog .transport-buttons .btn { min-width: 0; overflow: hidden; text-overflow: ellipsis; padding: 8px 4px; font-size: 12px; }
-.pad-dialog .transport > .check { flex-shrink: 0; }
+@media (max-width: 420px) {
+  .pad-dialog .transport { flex-wrap: wrap; gap: 6px; }
+  .pad-dialog .transport-meta { flex-basis: 100%; justify-content: flex-end; }
+}
 .expanded-play { display: flex; flex: 1; min-height: 0; }
 .pad-dialog .play-surface { display: flex; flex-direction: column; width: 100%; min-height: 0; gap: 8px; padding: 14px; }
 .pad-dialog .pad-area {

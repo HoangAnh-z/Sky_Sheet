@@ -101,20 +101,35 @@ function check(name, fn) { fn(); checks.push(name); }
       advance(0.06);
       assert.equal($('rollWrap').scrollLeft, 4);
       assert.deepEqual(lit(), [0]);
+      assert.equal($('rollStep').value, '1');
       advance(0.185);
       assert.equal($('rollWrap').scrollLeft, 4 + width / 2);
       assert.deepEqual(lit(), [0]);
       advance(0.31);
       assert.equal($('rollWrap').scrollLeft, 4 + width);
       assert.deepEqual(lit(), []);
+      assert.equal($('rollStep').value, '2');
       advance(0.55);
       assert.ok($('rollWrap').scrollLeft < 4 + 2 * width);
       assert.deepEqual(lit(), []);
       advance(0.56);
       assert.equal($('rollWrap').scrollLeft, 4 + 2 * width);
       assert.deepEqual(lit(), [1]);
+      assert.equal($('rollStep').value, '3');
       $('playBtn').click();
       assert.deepEqual(lit(), []);
+      assert.equal($('playBtn').textContent, 'Phát tiếp');
+      assert.ok(w.document.querySelector('.hd.paused-step[data-c="2"]'));
+      $('playBtn').click();
+      advance(0.63);
+      assert.deepEqual(lit(), [1]);
+      assert.equal($('rollStep').value, '3');
+      $('playBtn').click();
+      $('prevRollStep').click();
+      assert.equal($('rollStep').value, '2');
+      $('rollJump').requestSubmit();
+      assert.equal($('playBtn').textContent, 'Phát');
+      assert.ok(w.document.querySelector('.hd.start[data-c="1"]'));
     });
 
     check('Combined layers show overlapping colors and keep other layers read-only', () => {

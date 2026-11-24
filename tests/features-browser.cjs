@@ -48,6 +48,13 @@ async function register(page, name) {
         };
       });
       await page.goto(origin); await page.waitForFunction(() => !document.querySelector('#saveBtn').disabled);
+      const status = page.locator('#transportState'), loop = page.getByRole('switch', { name: 'Lặp', exact: true });
+      assert.ok(await status.isVisible());
+      assert.equal(await status.getAttribute('data-state'), 'ready');
+      assert.equal(await loop.isChecked(), true);
+      await loop.press('Space');
+      assert.equal(await loop.isChecked(), false);
+      await loop.check();
       await page.locator('#tab-sound').click();
       await page.locator('#sampleInst').selectOption('piano');
       await page.waitForFunction(() => document.querySelector('#sampleStatus').textContent.includes('Upright Piano KW'));
@@ -187,6 +194,13 @@ async function register(page, name) {
       assert.ok(Math.abs(rollRun.gap) <= 1, JSON.stringify(rollRun));
       const purple = theme === 'dark' ? 'rgb(196, 172, 255)' : 'rgb(112, 86, 200)';
       assert.deepEqual(rollRun.colors, [purple, purple]);
+      assert.equal(await page.locator('#rollStep').inputValue(), '32');
+      assert.equal(await page.locator('#playBtn').textContent(), 'Phát tiếp');
+      assert.equal(await status.getAttribute('data-state'), 'paused');
+      await page.locator('#prevRollStep').click();
+      assert.equal(await page.locator('#rollStep').inputValue(), '31');
+      await page.locator('#nextRollStep').click();
+      assert.equal(await page.locator('#rollStep').inputValue(), '32');
       await page.locator('#loop').check();
       await page.getByRole('tab', { name: 'Bản nhạc & AI', exact: true }).click();
       await page.locator('.midi-panel > summary').click();
@@ -253,7 +267,7 @@ async function register(page, name) {
       await page.locator('.cell.on[data-c="1366"]').waitFor();
       await page.locator('.hd.start[data-c="1366"]').waitFor();
       await page.locator('#rollStep').fill('1');
-      await page.locator('#rollJump button').click();
+      await page.locator('#rollJump button[type=submit]').click();
       await page.locator('.cell.on[data-c="0"]').first().waitFor();
       await page.locator('#guideBtn').click();
       assert.equal(await page.locator('.pad.guide-next').count(), 2);
@@ -332,6 +346,11 @@ async function register(page, name) {
       assert.equal(await page.locator('#playSurface #recordRestBtn').isVisible(), false);
       assert.equal(await page.locator('#playSurface #recordChordBtn').isVisible(), false);
       await page.locator('#recBtn').click();
+      assert.equal(await status.getAttribute('data-state'), 'recording');
+      await loop.press('Space');
+      assert.equal(await loop.isChecked(), false);
+      assert.match(await status.textContent(), /Chờ ghi/);
+      await loop.check();
       assert.equal(await recordHelp.isVisible(), !mobile);
       await page.locator('.pad[data-i="0"]').click();
       const chord = page.locator('#playSurface #recordChordBtn');

@@ -28,8 +28,10 @@
     <div class="transport panel" aria-label="Điều khiển phát và ghi">
       <div class="now-playing"><span class="cap">Bản nhạc hiện tại</span><strong id="songTitle">Bài chưa đặt tên</strong></div>
       <div class="row transport-buttons"><button class="btn primary" id="playBtn" type="button">Phát</button><button class="btn rec" id="recBtn" type="button">Ghi từ đàn</button><button class="btn" id="guideBtn" type="button" aria-pressed="false" aria-describedby="guideStatus" title="Sáng phím cần bấm của lớp đang chọn, chờ bạn bấm đủ nốt rồi mới sang bước tiếp">Tập theo đèn</button></div>
-      <label class="check"><input type="checkbox" id="loop" checked> Lặp</label>
-      <span class="transport-state" id="transportState" role="status">Sẵn sàng</span>
+      <div class="transport-meta">
+        <label class="toggle-switch"><input type="checkbox" role="switch" id="loop" checked> Lặp</label>
+        <span class="transport-state" id="transportState" role="status" data-state="ready">Sẵn sàng</span>
+      </div>
     </div>
 
     <main class="workspace">
@@ -81,11 +83,13 @@
               <button class="btn small" id="undoRollBtn" type="button" disabled>Hoàn tác</button>
               <button class="btn small" id="moreBtn" type="button">+ 8 bước</button><button class="btn small" id="clearBtn" type="button">Xóa lớp này</button>
               <form class="row roll-jump" id="rollJump">
-                <label for="rollStep">Đến bước</label>
+                <label for="rollStep">Bước hiện tại</label>
+                <button class="btn small roll-step-arrow" id="prevRollStep" type="button" aria-label="Giảm một bước">‹</button>
                 <input id="rollStep" type="number" inputmode="numeric" min="1" step="1" required>
+                <button class="btn small roll-step-arrow" id="nextRollStep" type="button" aria-label="Tăng một bước">›</button>
                 <button class="btn small" type="submit">Đến</button>
               </form>
-              <label class="roll-switch"><input id="rollAllTracks" type="checkbox" role="switch"> Hiện tất cả lớp</label>
+              <label class="toggle-switch"><input id="rollAllTracks" type="checkbox" role="switch"> Hiện tất cả lớp</label>
             </div>
             <div class="roll-wrap" id="rollWrap"><div class="roll" id="roll"></div></div>
             <p class="hint">Bấm để đặt hoặc xóa nốt. Kéo nốt để đổi phím hoặc thời điểm. Trên màn hình cảm ứng, bật Sửa nốt để chỉnh lưới.</p>

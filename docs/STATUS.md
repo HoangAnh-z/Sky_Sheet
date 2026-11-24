@@ -1,7 +1,7 @@
 # Tiến độ hiện tại — Phòng Nhạc Sky
 
 - Cập nhật: **2026-11-24**, múi giờ `Asia/Saigon`.
-- Bản ghi mới nhất: [028 — Hiển thị phím tắt ghi nhạc](prompts/028-hien-thi-phim-tat-ghi-nhac.md).
+- Bản ghi mới nhất: [030 — Ô trạng thái và công tắc Lặp](prompts/030-trang-thai-va-cong-tac-lap.md).
 
 ## Đang ở đâu?
 
@@ -11,7 +11,11 @@ Nhánh `upgrade2` từng được merge vào `main` tại `a127c8f`. Bản sửa
 
 Khung soạn có nút **Soạn nhạc mới** để mở bài trống một lớp. Trang hỏi trước khi bỏ các thay đổi chưa lưu.
 
-Bản sửa 024–028 đang tại máy trên `upgrade3`. **Ghi từ đàn** nhận từng lần bấm và cuộn tới bước mới. **Ghi tiếp** nối vào cuối lớp đang chọn, kể cả sau bước nghỉ. Máy tính hiện hướng dẫn **Space** để nghỉ và giữ **Shift** để gom nốt ngay dưới bàn đàn. Hai nút **Nghỉ** và **Hợp âm** hiện dưới phím đàn trong lúc ghi trên màn hình cảm ứng. **Soạn nhạc mới** mở bài trống và hỏi trước nếu bản hiện tại có thay đổi chưa lưu.
+Bản sửa 024–028 đã có trong commit `284363c` trên `upgrade3`. **Ghi tiếp** nối vào cuối lớp đang chọn, kể cả sau bước nghỉ. Máy tính hiện hướng dẫn **Space** và **Shift**. Màn hình cảm ứng có nút **Nghỉ** và **Hợp âm** trong lúc ghi. **Soạn nhạc mới** hỏi trước nếu bản hiện tại có thay đổi chưa lưu.
+
+Bản sửa 029 đang ở thư mục làm việc trên `upgrade3`. Ô **Bước hiện tại** cập nhật theo bài trong lúc phát, có mũi tên và nút **Đến**. **Dừng** giữ bước vừa phát để **Phát tiếp**.
+
+Bản sửa 030 trên `upgrade3` đổi **Lặp** thành công tắc và thêm viền màu ô trạng thái phát, ghi, tập hoặc tạm dừng.
 
 | Phần | Trạng thái hiện tại |
 |---|---|
@@ -28,7 +32,7 @@ Bản sửa 024–028 đang tại máy trên `upgrade3`. **Ghi từ đàn** nh�
 | PDF/OMR | Để sau theo yêu cầu, chưa triển khai |
 | Bài công khai/copy về thư viện | Đã làm snapshot công khai, tìm/lọc/phân trang, nghe thử, copy riêng có nguồn, không ghi đè bài trùng tên |
 | Bình luận/thích/theo dõi | Đã làm cơ bản trong cùng backend; có xóa bình luận theo quyền, lọc feed theo dõi; chưa có chat/thông báo/realtime |
-| Khung soạn nhạc | Nhánh `upgrade2` có piano roll 64 px/bước, kéo nốt, hoàn tác, Đến bước, công tắc nhiều lớp theo màu và cuộn theo nhịp về cột phím cố định |
+| Khung soạn nhạc | Piano roll 64 px/bước, kéo nốt, hoàn tác, công tắc nhiều lớp theo màu và cuộn về cột phím cố định. Bản sửa 029 hiện **Bước hiện tại** và giữ vị trí khi dừng |
 | Âm thanh | Nhánh `upgrade2` đóng kèm 65 MP3 CC0 cho piano, guitar, đàn hạc, sáo, dàn dây và bộ trống. Mẫu âm cá nhân vẫn ưu tiên. [Nguồn âm](AUDIO-SOURCES.md) |
 | Chơi chồng lớp / tập | Ô Chơi chỉ hiện khi chọn chồng lớp. Quầng tím cho nốt tập, viền xanh cho Đô, phím sáng vàng khi chơi |
 | Phóng to điện thoại | Bản tại máy giữ 3 hàng × 5 phím cả ngang lẫn dọc, có chế độ phóng to trong trang và cùng bảng màu phím |

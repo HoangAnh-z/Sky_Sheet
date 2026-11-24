@@ -26,7 +26,7 @@ Sau đó mở http://localhost:5173. Dừng server bằng Ctrl+C.
 ## Bố cục và cách chơi
 
 - Thanh phát/ghi luôn ở ngoài các tab. Máy tính dùng bố cục hai cột theo chiều cao màn hình; điện thoại xếp dọc, thanh phát/ghi bám trên cùng. Danh sách nhiều lớp và bản nhạc dài cuộn trong vùng riêng.
-- **Soạn nhạc**: khung piano roll có cột phím cố định để nghe nốt, kéo nốt, hoàn tác và cột 64 px. **Đến bước** nhảy đến vị trí cần sửa hoặc tua ngay khi đang phát. Công tắc **Hiện tất cả lớp** ghép nốt theo màu, kể cả khi trùng ô. Sửa nốt và hoàn tác áp dụng cho lớp đang chọn. Trên điện thoại, bật **Sửa nốt** trước khi chạm hoặc kéo nốt.
+- **Soạn nhạc**: khung piano roll có cột phím cố định để nghe nốt, kéo nốt, hoàn tác và cột 64 px. Ô **Bước hiện tại** chạy theo bài. Nhập số hoặc dùng hai mũi tên rồi bấm **Đến** để đổi vị trí, kể cả khi đang phát. **Dừng** giữ bước vừa nghe để **Phát tiếp** từ đầu bước đó. Công tắc **Hiện tất cả lớp** ghép nốt theo màu, kể cả khi trùng ô. Sửa nốt và hoàn tác áp dụng cho lớp đang chọn. Trên điện thoại, bật **Sửa nốt** trước khi chạm hoặc kéo nốt.
 - **Soạn nhạc mới** mở một bài trống có một lớp đàn hạc. Nếu bài hiện tại có thay đổi chưa lưu, trang hỏi trước khi bỏ bản đang sửa. Bài đã lưu vẫn nằm trong Thư viện.
 - **Dàn nhạc**: nút tròn chọn lớp để chơi và soạn. M tắt tiếng, S nghe riêng. M vẫn có hiệu lực khi bật S. **Mở rộng lưới** ẩn đàn bên trái trên màn hình rộng. Dùng **Phóng to** trong mục **Chơi đàn** để mở bàn phím toàn màn hình khi được hỗ trợ.
 - **Thư viện**: bài mẫu, bài lưu tại máy khi dùng khách, hoặc thư viện riêng theo tài khoản khi đăng nhập. Có bài Ode to Joy ba lớp để thử.

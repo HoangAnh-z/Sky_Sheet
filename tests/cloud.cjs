@@ -84,6 +84,28 @@ const sample = { title: 'Bài / thử 🎵', bpm: 100, text: '# bpm 100\nQ W E' 
     const privateSong = w.__cloud.snapshot().songs.find(song => song.title === 'Bài riêng mới');
     await w.__cloud.remove(privateSong.id);
     check('Delete updates the database and account library', () => assert.equal(w.__cloud.snapshot().songs.length, 1));
+    const original = w.__cloud.snapshot().songs[0];
+    [...$('songs').querySelectorAll('.song')].find(button => button.firstChild.textContent === original.title).click();
+    $('recBtn').click(); $('recBtn').click();
+    assert.equal($('titleIn').value, original.title);
+    assert.match($('toast').textContent, /Chưa ghi được nốt nào/);
+    $('recBtn').click(); w.document.querySelector('.pad[data-i="0"]').click(); $('recBtn').click();
+    $('tab-sheet').click();
+    assert.equal($('titleIn').value, '');
+    assert.match($('sheet').value, /^# title Bài chưa đặt tên\n/);
+    assert.ok(!$('sheet').value.includes(original.title));
+    $('titleIn').value = 'Bản ghi mới'; event(w, $('titleIn'), 'change');
+    $('addTrk').click();
+    $('recBtn').click(); w.document.querySelector('.pad[data-i="1"]').click(); $('recBtn').click();
+    assert.match($('sheet').value, /^# title Bản ghi mới\n/);
+    $('saveBtn').click();
+    await until(() => w.__cloud.snapshot().songs.length === 2 && !w.__cloud.snapshot().busy);
+    check('Recording creates a new draft, preserves its title across layers, and leaves the saved original intact', () => {
+      const songs = w.__cloud.snapshot().songs;
+      assert.equal(songs.find(song => song.id === original.id).text, original.text);
+      assert.equal(songs.find(song => song.id === original.id).title, original.title);
+      assert.ok(songs.some(song => song.title === 'Bản ghi mới' && song.id !== original.id));
+    });
     await w.__cloud.signOut();
     assert.deepEqual(app.errors, []);
   } finally { app.dom.window.close(); await backend.close(); }

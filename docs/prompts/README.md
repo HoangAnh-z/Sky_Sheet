@@ -29,10 +29,12 @@ Nhật ký phục vụ việc bàn giao giữa các phiên và môn học Prompt
 | 019 | 2026-11-22 | Tìm API và mã nguồn mở chuyển MP3 sang MIDI | Đã trả lời, tạm dừng | [019-de-xuat-mp3-sang-midi.md](019-de-xuat-mp3-sang-midi.md) |
 | 020 | 2026-11-22 | Basic Pitch với cả bài và nhiều nhạc cụ | Đã trả lời, tạm dừng | [020-basic-pitch-ban-phoi.md](020-basic-pitch-ban-phoi.md) |
 | 021 | 2026-11-22 | Tích hợp bản Piano vào Sky_Sheet trên upgrade2 | Đã xong mã tại máy | [021-tich-hop-ban-piano-vao-upgrade2.md](021-tich-hop-ban-piano-vao-upgrade2.md) |
+| 022 | 2026-11-24 | Bỏ nút Chơi đàn cạnh lưới và sửa tiêu đề bản ghi | Đã xong mã tại máy | [022-tieu-de-ban-ghi-va-nut-choi-dan.md](022-tieu-de-ban-ghi-va-nut-choi-dan.md) |
+| 023 | 2026-11-24 | Thêm nút Soạn nhạc mới | Đã xong mã tại máy | [023-nut-soan-nhac-moi.md](023-nut-soan-nhac-moi.md) |
 
 Bản ghi 014–020 là lịch sử của workspace thử nghiệm Sky_Sheet_Piano. Các mốc triển khai vào bản chính bắt đầu ở 021.
 
-**Số tiếp theo: 022** — đối chiếu các file/mục lục thực tế trước khi dùng số này.
+**Số tiếp theo: 024** — đối chiếu các file/mục lục thực tế trước khi dùng số này.
 
 ## Quy ước
 

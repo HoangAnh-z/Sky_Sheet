@@ -27,7 +27,8 @@ Sau đó mở http://localhost:5173. Dừng server bằng Ctrl+C.
 
 - Thanh phát/ghi luôn ở ngoài các tab. Máy tính dùng bố cục hai cột theo chiều cao màn hình; điện thoại xếp dọc, thanh phát/ghi bám trên cùng. Danh sách nhiều lớp và bản nhạc dài cuộn trong vùng riêng.
 - **Soạn nhạc**: khung piano roll có cột phím cố định để nghe nốt, kéo nốt, hoàn tác và cột 64 px. **Đến bước** nhảy đến vị trí cần sửa hoặc tua ngay khi đang phát. Công tắc **Hiện tất cả lớp** ghép nốt theo màu, kể cả khi trùng ô. Sửa nốt và hoàn tác áp dụng cho lớp đang chọn. Trên điện thoại, bật **Sửa nốt** trước khi chạm hoặc kéo nốt.
-- **Dàn nhạc**: nút tròn chọn lớp để chơi và soạn. M tắt tiếng, S nghe riêng. M vẫn có hiệu lực khi bật S. **Mở rộng lưới** ẩn đàn bên trái trên màn hình rộng và **Chơi đàn** mở bàn phím phóng to.
+- **Soạn nhạc mới** mở một bài trống có một lớp đàn hạc. Nếu bài hiện tại có thay đổi chưa lưu, trang hỏi trước khi bỏ bản đang sửa. Bài đã lưu vẫn nằm trong Thư viện.
+- **Dàn nhạc**: nút tròn chọn lớp để chơi và soạn. M tắt tiếng, S nghe riêng. M vẫn có hiệu lực khi bật S. **Mở rộng lưới** ẩn đàn bên trái trên màn hình rộng. Dùng **Phóng to** trong mục **Chơi đàn** để mở bàn phím toàn màn hình khi được hỗ trợ.
 - **Thư viện**: bài mẫu, bài lưu tại máy khi dùng khách, hoặc thư viện riêng theo tài khoản khi đăng nhập. Có bài Ode to Joy ba lớp để thử.
 - **Bản nhạc & AI**: nhập/xuất dạng chữ, nhập file MIDI ngay tại máy, lưu/chia sẻ bài và tạo lời nhắc cho AI. Không có yêu cầu tới dịch vụ AI trong trang.
 - **Cộng đồng**: tìm bài/người đăng, nghe thử, lưu bản sao về thư viện, thích, theo dõi và bình luận. Cần chạy backend để dùng; MIDI và chế độ khách vẫn dùng được trên trang tĩnh.
@@ -41,7 +42,7 @@ Ba cách chơi nhiều lớp:
 
 1. **Chồng âm sắc**: mục “Khi bấm đàn” → “Chồng các lớp có bật Chơi”. Ô **Chơi** hiện trong Dàn nhạc khi bật chế độ này. Một phím phát cùng nốt trên các lớp đã tích, theo quãng tám, âm lượng và M/S của từng lớp. Chỉnh nhạc cụ ở từng thẻ trong Dàn nhạc. Có thể bấm nhiều phím cùng lúc hoặc dùng nhiều ngón trên màn hình cảm ứng.
 2. **Chơi trên nền**: bấm Phát để chạy bản phối, rồi tự chơi lớp đang chọn. Để tránh trùng giai điệu có sẵn, bật M ở lớp giai điệu cũ rồi thêm một lớp mới để tự đàn. M tắt cả phần phát và tiếng đàn tay của lớp đó.
-3. **Ghi lần lượt**: chọn lớp → Ghi từ đàn → bấm phím đầu tiên để bắt đầu. Bản ghi thay nốt của lớp đó và các lớp khác phát làm nền nếu bật tùy chọn. Bản ghi luôn vào lớp đang chọn. Trong khi ghi, thay lớp, nhạc cụ và tốc độ bị khóa. Rời tab trình duyệt kết thúc bản ghi. Khi chỉ phát nhạc, bài tiếp tục nếu trình duyệt và hệ điều hành cho phép phát nền.
+3. **Ghi lần lượt**: chọn lớp → Ghi từ đàn → bấm phím đầu tiên để bắt đầu. Bản ghi thay nốt của lớp đó và các lớp khác phát làm nền nếu bật tùy chọn. Khi ghi từ một bài đã mở, bản nháp bắt đầu với tiêu đề trống. Đặt tên trong **Bản nhạc & AI** rồi lưu thành bài khác. Có thể ghi thêm các lớp trên cùng bản nháp trước khi lưu. Trong khi ghi, thay lớp, nhạc cụ và tốc độ bị khóa. Rời tab trình duyệt kết thúc bản ghi. Khi chỉ phát nhạc, bài tiếp tục nếu trình duyệt và hệ điều hành cho phép phát nền.
 
 ### Tập theo đèn
 
